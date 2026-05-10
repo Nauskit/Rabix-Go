@@ -1,12 +1,13 @@
 const express = require('express');
-const bodyPaser = require('body-parser');
 const cors = require('cors');
-const connectDB = require('./config/db')
+const { connectDB } = require('./config/db')
+const authrouter = require('./routers/authRouter')
 const app = express();
 
-app.use(bodyPaser.json());
+app.use(express.json());
 app.use(cors());
 connectDB();
 
+app.use('/auth', authrouter)
 
 module.exports = app;

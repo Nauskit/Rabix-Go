@@ -5,8 +5,7 @@ import { Input, Btn, Divider, ErrorAlert, SuccessAlert } from "../components/For
 export default function Register() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
-        firstName: "",
-        lastName: "",
+        username: "",
         email: "",
         password: "",
         confirmPassword: "",
@@ -19,7 +18,7 @@ export default function Register() {
     const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
     const handleSubmit = async () => {
-        if (!form.firstName || !form.lastName || !form.email || !form.password) {
+        if (!form.username) {
             setError("กรุณากรอกข้อมูลให้ครบ");
             return;
         }
@@ -39,17 +38,17 @@ export default function Register() {
         setLoading(true);
         setError("");
         try {
-            const res = await fetch("/api/auth/register", {
+            const res = await fetch("http://localhost:3000/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    firstName: form.firstName,
-                    lastName: form.lastName,
+                    username: form.username,
                     email: form.email,
                     password: form.password,
                 }),
             });
             const data = await res.json();
+
             if (!res.ok) throw new Error(data.message || "Register failed");
 
             setSuccess("สมัครสมาชิกสำเร็จ! กำลังพาไป Login...");
@@ -76,9 +75,8 @@ export default function Register() {
                 </div>
 
                 {/* Form */}
-                <div className="grid grid-cols-2 gap-3">
-                    <Input label="ชื่อ" placeholder="สมชาย" value={form.firstName} onChange={set("firstName")} />
-                    <Input label="นามสกุล" placeholder="ใจดี" value={form.lastName} onChange={set("lastName")} />
+                <div className="">
+                    <Input label="uesrname" placeholder="สมชาย" value={form.username} onChange={set("username")} />
                 </div>
                 <Input label="Email" type="email" placeholder="you@example.com" value={form.email} onChange={set("email")} />
                 <Input label="Password" type="password" placeholder="อย่างน้อย 8 ตัวอักษร" value={form.password} onChange={set("password")} />

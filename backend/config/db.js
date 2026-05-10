@@ -22,4 +22,5 @@ const connectDB = async () => {
     }
 }
 
+
 module.exports = { pool, connectDB };

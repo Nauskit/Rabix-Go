@@ -18,17 +18,20 @@ export default function Login() {
         setLoading(true);
         setError("");
         try {
-            const res = await fetch("/auth/login", {
+            const res = await fetch("http://localhost:3000/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    email: form.email,
+                    password: form.password,
+                }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Login failed");
 
             localStorage.setItem("token", data.token);
             localStorage.setItem("refreshToken", data.refreshToken);
-            navigate("/dashboard"); // เปลี่ยนเป็น route ที่ต้องการหลัง login
+            navigate("/Home"); // เปลี่ยนเป็น route ที่ต้องการหลัง login
         } catch (err) {
             setError(err.message);
         } finally {

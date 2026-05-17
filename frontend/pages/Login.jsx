@@ -29,7 +29,7 @@ export default function Login() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Login failed");
 
-            localStorage.setItem("token", data.token);
+            localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("refreshToken", data.refreshToken);
             navigate("/Home"); // เปลี่ยนเป็น route ที่ต้องการหลัง login
         } catch (err) {

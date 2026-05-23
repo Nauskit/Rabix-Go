@@ -15,6 +15,18 @@ exports.register = async (req, res) => {
             })
         }
 
+        //input normalization
+        email = email.toLowerCase().trim();
+
+        //check format email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                message: "Invalid email format"
+            })
+        }
+
         const userExist = await pool.query(
             'SELECT id FROM users WHERE email = $1', [email]
         )
@@ -26,13 +38,14 @@ exports.register = async (req, res) => {
 
         const hashPassword = await bcrypt.hash(password, 10);
 
-        await pool.query(
+        const newUser = await pool.query(
             'INSERT INTO users (username,email,password) VALUES ($1,$2,$3) RETURNING *',
             [username, email, hashPassword]
         )
 
         return res.status(201).json({
-            message: "Register success"
+            message: "Register success",
+            user: newUser.rows[0]
         })
 
     } catch (err) {

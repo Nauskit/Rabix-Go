@@ -17,7 +17,6 @@
 | cors | ^2.8.6 | Cross-origin resource sharing |
 | dotenv | ^17.4.2 | Environment variables |
 | crypto (built-in) | Node.js built-in | Hash refresh token ด้วย SHA-256 |
-| nodemon | ^3.1.14 | Auto-restart on dev |
 
 ### Frontend
 | Package | Version | หน้าที่ |

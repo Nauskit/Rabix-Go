@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input, Btn, Divider, ErrorAlert } from "../components/FormElements.jsx";
 
-export default function Login() {
+export default function Login({ onLogin }) {
     const navigate = useNavigate();
     const [form, setForm] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
@@ -21,17 +21,21 @@ export default function Login() {
             const res = await fetch("http://localhost:3000/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: form.email,
-                    password: form.password,
-                }),
+                body: JSON.stringify({ email: form.email, password: form.password }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Login failed");
 
+            // Store tokens + username
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("refreshToken", data.refreshToken);
-            navigate("/Home"); // เปลี่ยนเป็น route ที่ต้องการหลัง login
+            localStorage.setItem("username", data.username ?? form.email.split("@")[0]);
+
+            // Notify App.jsx via prop and custom event
+            onLogin?.({ username: data.username ?? form.email.split("@")[0] });
+            window.dispatchEvent(new Event("auth"));
+
+            navigate("/restaurants");
         } catch (err) {
             setError(err.message);
         } finally {
@@ -42,38 +46,21 @@ export default function Login() {
     return (
         <div className="min-h-screen pt-[60px] flex items-center justify-center px-4">
             <div className="bg-[#13131a] border border-[#2a2a38] rounded-2xl p-8 w-full max-w-sm">
-                {/* Header */}
                 <div className="mb-8">
-                    <h2
-                        className="font-black text-2xl tracking-tight"
-                        style={{ fontFamily: "Syne, sans-serif" }}
-                    >
+                    <h2 className="font-black text-2xl tracking-tight" style={{ fontFamily: "Syne, sans-serif" }}>
                         ยินดีต้อนรับกลับ
                     </h2>
                     <p className="text-[#6b6b80] text-sm mt-1">เข้าสู่ระบบเพื่อจัดการออเดอร์</p>
                 </div>
 
-                {/* Form */}
-                <Input
-                    label="Email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={form.email}
-                    onChange={set("email")}
-                />
-                <Input
-                    label="Password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={form.password}
-                    onChange={set("password")}
-                />
+                <Input label="Email" type="email" placeholder="you@example.com" value={form.email} onChange={set("email")} />
+                <Input label="Password" type="password" placeholder="••••••••" value={form.password} onChange={set("password")} />
 
                 <div className="flex justify-end mb-5">
-                    <span className="text-xs text-[#7c6bff] cursor-pointer hover:underline">
-                        ลืมรหัสผ่าน?
-                    </span>
+                    <span className="text-xs text-[#7c6bff] cursor-pointer hover:underline">ลืมรหัสผ่าน?</span>
                 </div>
+
+                <ErrorAlert message={error} />
 
                 <Btn onClick={handleSubmit} disabled={loading}>
                     {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}

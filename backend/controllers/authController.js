@@ -104,12 +104,8 @@ exports.login = async (req, res) => {
             username: user.username
         })
     } catch (err) {
-        console.log(err);
-        return res.status(500).json({
-            message: "Server Error",
-            error: err.message
-        })
-
+        console.error(err);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 }
 
@@ -144,11 +140,8 @@ exports.rePassword = async (req, res) => {
         })
 
     } catch (err) {
-        console.log(err);
-        return res.status(500).json({
-            message: "Server Error",
-            error: err.message
-        })
+        console.error(err);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 }
 
@@ -187,11 +180,8 @@ exports.logout = async (req, res) => {
         })
 
     } catch (err) {
-        console.log(err);
-        return res.status(500).json({
-            message: "Server Error",
-            error: err.message
-        })
+        console.error(err);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 }
 
@@ -212,10 +202,7 @@ exports.getUser = async (req, res) => {
             users: getAllUser.rows
         })
     } catch (err) {
-        console.log(err);
-        return res.status(500).json({
-            message: "Server Error",
-            error: err.message
-        })
+        console.error(err);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 }

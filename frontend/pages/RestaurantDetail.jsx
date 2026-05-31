@@ -1,0 +1,380 @@
+import { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
+
+// ── Mock Data ──────────────────────────────────────────────────────────
+const MOCK_DETAIL = {
+    id: 1,
+    name: "ครัวคุณแม่",
+    description: "อาหารไทยโฮมเมดรสชาติต้นตำรับ ทำสดใหม่ทุกวัน ใช้วัตถุดิบคัดสรรจากตลาดสด ทุกเมนูปรุงด้วยใจ เหมือนได้กินข้าวที่บ้าน",
+    category: "อาหารไทย",
+    rating: 4.8,
+    reviewCount: 128,
+    imageUrl: "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=1200&q=80",
+    address: "123 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
+    isOpen: true,
+    priceRange: "฿฿",
+    phone: "02-123-4567",
+    avgPrice: 250,
+    tags: ["ถ่ายรูปสวย", "บรรยากาศดี", "อาหารอร่อย", "เงียบสงบ", "ที่จอดรถง่าย"],
+    hours: [
+        { day: "จันทร์ - ศุกร์", open: "10:00", close: "21:00", closed: false },
+        { day: "เสาร์ - อาทิตย์", open: "09:00", close: "22:00", closed: false },
+    ],
+    images: [
+        "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=600&q=80",
+        "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80",
+        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80",
+        "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600&q=80",
+    ],
+    reviews: [
+        { id: 1, user: "นนท์ สมใจ", avatar: "น", rating: 5, comment: "อร่อยมากๆ เหมือนข้าวบ้านจริงๆ บรรยากาศเงียบสงบ เหมาะมาสักคนเดียวอ่านหนังสือ", date: "2 วันที่แล้ว", tags: ["ถ่ายรูปสวย", "อาหารอร่อย"] },
+        { id: 2, user: "มิ้น พิชญา", avatar: "ม", rating: 4, comment: "ราคาสมเหตุสมผล อาหารรสชาติดี แต่รอนานหน่อยช่วงเที่ยง", date: "1 สัปดาห์ที่แล้ว", tags: ["บรรยากาศดี"] },
+        { id: 3, user: "ต้น ธนกร", avatar: "ต", rating: 5, comment: "มาซ้ำหลายครั้งแล้ว รสชาติคงที่ทุกครั้ง ประทับใจมาก", date: "2 สัปดาห์ที่แล้ว", tags: ["อาหารอร่อย", "เงียบสงบ"] },
+    ],
+};
+
+// ── Stars ──────────────────────────────────────────────────────────────
+function Stars({ rating, size = "sm" }) {
+    const full = Math.floor(rating);
+    const half = rating - full >= 0.5;
+    const s = size === "lg" ? "w-4 h-4" : "w-3 h-3";
+    return (
+        <div className="flex items-center gap-0.5">
+            {[1, 2, 3, 4, 5].map((n) => (
+                <svg key={n} className={`${s} ${n <= full ? "text-[#e8ff47]" : n === full + 1 && half ? "text-[#e8ff47]/50" : "text-[#2a2a38]"}`} viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+            ))}
+        </div>
+    );
+}
+
+// ── Rating Bar ─────────────────────────────────────────────────────────
+function RatingBar({ label, pct }) {
+    return (
+        <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[#6b6b80] w-4 shrink-0">{label}</span>
+            <div className="flex-1 h-1.5 bg-[#1c1c26] rounded-full overflow-hidden">
+                <div className="h-full bg-[#e8ff47] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+            </div>
+            <span className="text-[10px] text-[#6b6b80] w-6 text-right">{pct}%</span>
+        </div>
+    );
+}
+
+// ── Main ───────────────────────────────────────────────────────────────
+export default function RestaurantDetail({ onBack, user }) {
+    const [place, setPlace] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [activeImg, setActiveImg] = useState(0);
+    const [tab, setTab] = useState("info"); // info | reviews
+    const [saved, setSaved] = useState(false);
+    const [addedToRoute, setAddedToRoute] = useState(false);
+    const { id } = useParams();
+
+    useEffect(() => {
+        const fetchPlaces = async () => {
+            try {
+                setLoading(true);
+                const res = await fetch(`http://localhost:3000/places/${id}`)
+                const d = await res.json();
+                setPlace(d.data)
+            } catch (error) {
+                console.log(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPlaces();
+    }, [id])
+
+    if (loading) return <DetailSkeleton />;
+    if (!place) return null;
+
+    const PRICE_COLOR = { "฿": "text-[#e8ff47]", "฿฿": "text-[#e8ff47]/80", "฿฿฿": "text-[#7c6bff]", "฿฿฿฿": "text-[#ff4d6d]" };
+
+    return (
+        <div className="min-h-screen pt-[60px] bg-[#0a0a0f]">
+            {/* ── Back Button ─────────────────────────────────────────────── */}
+            <div className="max-w-4xl mx-auto px-4 pt-6 pb-2">
+                <button
+                    onClick={onBack}
+                    className="flex items-center gap-2 text-[#6b6b80] hover:text-[#f0f0f8] text-sm transition-colors group"
+                >
+                    <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <Link to={'/restaurants'}>
+                        กลับไปหน้าร้านอาหาร
+                    </Link>
+                </button>
+            </div>
+
+            <div className="max-w-4xl mx-auto px-4 pb-20">
+                {/* ── Image Gallery ────────────────────────────────────────── */}
+                <div className="mt-4 rounded-2xl overflow-hidden border border-[#2a2a38] relative">
+                    <div className="relative h-72 md:h-96 bg-[#1c1c26]">
+                        <img
+                            src={place.images?.[activeImg] ?? place.images}
+                            alt={place.name}
+                            className="w-full h-full object-cover opacity-90 transition-all duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/20 to-transparent" />
+
+                        {/* Status + Price */}
+                        <div className="absolute top-4 left-4 flex gap-2">
+                            <span className={`text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-sm border ${place.is_open ? "bg-[#e8ff47]/15 border-[#e8ff47]/30 text-[#e8ff47]" : "bg-[#6b6b80]/15 border-[#6b6b80]/30 text-[#6b6b80]"}`}>
+                                {place.is_open ? "● เปิดอยู่" : "○ ปิดแล้ว"}
+                            </span>
+                            <span className={`text-xs font-black px-3 py-1 rounded-full bg-[#0a0a0f]/70 backdrop-blur-sm ${PRICE_COLOR[place.priceRange] ?? "text-[#6b6b80]"}`}>
+                                {place.avg_price}
+                            </span>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="absolute top-4 right-4 flex gap-2">
+                            <button
+                                onClick={() => setSaved(!saved)}
+                                className={`w-9 h-9 rounded-full backdrop-blur-sm border flex items-center justify-center transition-all ${saved ? "bg-[#ff4d6d]/20 border-[#ff4d6d]/40 text-[#ff4d6d]" : "bg-[#0a0a0f]/60 border-[#2a2a38] text-[#6b6b80] hover:text-white"}`}
+                            >
+                                <svg className="w-4 h-4" fill={saved ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Thumbnail dots */}
+                        {place.images?.length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                {place.images.map((_, i) => (
+                                    <button key={i} onClick={() => setActiveImg(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === activeImg ? "bg-[#e8ff47] w-4" : "bg-[#6b6b80]/60"}`} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Thumbnail strip */}
+                    {place.images?.length > 1 && (
+                        <div className="flex gap-2 p-3 bg-[#13131a]">
+                            {place.images.map((img, i) => (
+                                <button key={i} onClick={() => setActiveImg(i)} className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${i === activeImg ? "border-[#e8ff47]" : "border-transparent opacity-50 hover:opacity-80"}`}>
+                                    <img src={img} alt="" className="w-full h-full object-cover" />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Header Info ──────────────────────────────────────────── */}
+                <div className="mt-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="flex-1">
+                        <span className="text-[11px] font-bold text-[#7c6bff] uppercase tracking-widest">{place.category}</span>
+                        <h1 className="font-black text-3xl text-[#f0f0f8] mt-1 leading-tight" style={{ fontFamily: "Syne, sans-serif" }}>
+                            {place.name}
+                        </h1>
+                        <div className="flex items-center gap-3 mt-2">
+                            <Stars rating={place.rating} size="lg" />
+                            <span className="text-sm font-bold text-[#f0f0f8]">{place.rating}</span>
+                            <span className="text-xs text-[#6b6b80]">({place.reviewCount} รีวิว)</span>
+                        </div>
+                    </div>
+
+                    {/* Add to Route CTA */}
+                    <button
+                        onClick={() => setAddedToRoute(!addedToRoute)}
+                        className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${addedToRoute ? "bg-[#e8ff47]/20 border border-[#e8ff47]/40 text-[#e8ff47]" : "bg-[#e8ff47] text-[#0a0a0f] hover:opacity-90"}`}
+                    >
+                        {addedToRoute ? "✓ เพิ่มใน Route แล้ว" : "＋ เพิ่มใน Route"}
+                    </button>
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                    {place.tags?.map((tag) => (
+                        <span key={tag} className="text-[11px] px-3 py-1 rounded-full bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80]">
+                            {tag}
+                        </span>
+                    ))}
+                </div>
+
+                {/* ── Tabs ─────────────────────────────────────────────────── */}
+                <div className="flex gap-1 mt-8 bg-[#13131a] border border-[#2a2a38] rounded-xl p-1">
+                    {[{ key: "info", label: "ข้อมูลร้าน" }, { key: "reviews", label: `รีวิว (${place.reviewCount})` }].map((t) => (
+                        <button
+                            key={t.key}
+                            onClick={() => setTab(t.key)}
+                            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === t.key ? "bg-[#7c6bff] text-white" : "text-[#6b6b80] hover:text-[#f0f0f8]"}`}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* ── TAB: Info ────────────────────────────────────────────── */}
+                {tab === "info" && (
+                    <div className="mt-6 space-y-4">
+                        {/* Description */}
+                        <div className="bg-[#13131a] border border-[#2a2a38] rounded-xl p-5">
+                            <h2 className="text-xs font-bold text-[#6b6b80] uppercase tracking-widest mb-3">เกี่ยวกับร้าน</h2>
+                            <p className="text-sm text-[#c0c0d0] leading-relaxed">{place.description}</p>
+                        </div>
+
+                        {/* Info grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Contact */}
+                            <div className="bg-[#13131a] border border-[#2a2a38] rounded-xl p-5 space-y-3">
+                                <h2 className="text-xs font-bold text-[#6b6b80] uppercase tracking-widest">ติดต่อ & ที่ตั้ง</h2>
+                                <div className="flex items-start gap-3 text-sm text-[#c0c0d0]">
+                                    <svg className="w-4 h-4 shrink-0 mt-0.5 text-[#7c6bff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span>{place.address}</span>
+                                </div>
+                                {place.phone && (
+                                    <div className="flex items-center gap-3 text-sm text-[#c0c0d0]">
+                                        <svg className="w-4 h-4 shrink-0 text-[#7c6bff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                        <span>{place.phone}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-3 text-sm text-[#c0c0d0]">
+                                    <svg className="w-4 h-4 shrink-0 text-[#7c6bff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>ราคาเฉลี่ย {place.avgPrice ? `฿${place.avgPrice}/คน` : place.priceRange}</span>
+                                </div>
+                            </div>
+
+                            {/* Hours */}
+                            <div className="bg-[#13131a] border border-[#2a2a38] rounded-xl p-5 space-y-3">
+                                <h2 className="text-xs font-bold text-[#6b6b80] uppercase tracking-widest">เวลาเปิด-ปิด</h2>
+                                {place.hours?.map((h, i) => (
+                                    <div key={i} className="flex justify-between items-center text-sm">
+                                        <span className="text-[#6b6b80]">{h.day}</span>
+                                        {h.closed
+                                            ? <span className="text-[#ff4d6d] text-xs font-bold">หยุด</span>
+                                            : <span className="text-[#e8ff47] font-bold">{h.open} – {h.close}</span>
+                                        }
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Map placeholder */}
+                        <div className="bg-[#13131a] border border-[#2a2a38] rounded-xl overflow-hidden">
+                            <div className="h-40 bg-[#1c1c26] flex items-center justify-center relative">
+                                <div className="absolute inset-0 opacity-10"
+                                    style={{ backgroundImage: "repeating-linear-gradient(0deg,#7c6bff 0,#7c6bff 1px,transparent 0,transparent 50%),repeating-linear-gradient(90deg,#7c6bff 0,#7c6bff 1px,transparent 0,transparent 50%)", backgroundSize: "30px 30px" }}
+                                />
+                                <div className="text-center z-10">
+                                    <div className="text-3xl mb-2">📍</div>
+                                    <p className="text-xs text-[#6b6b80]">แผนที่</p>
+                                </div>
+                            </div>
+                            <div className="p-4">
+                                <p className="text-xs text-[#6b6b80] truncate">{place.address}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── TAB: Reviews ─────────────────────────────────────────── */}
+                {tab === "reviews" && (
+                    <div className="mt-6 space-y-4">
+                        {/* Rating summary */}
+                        <div className="bg-[#13131a] border border-[#2a2a38] rounded-xl p-5 flex gap-6">
+                            <div className="text-center shrink-0">
+                                <div className="font-black text-5xl text-[#e8ff47]" style={{ fontFamily: "Syne, sans-serif" }}>{place.rating}</div>
+                                <Stars rating={place.rating} size="lg" />
+                                <p className="text-[11px] text-[#6b6b80] mt-1">{place.reviewCount} รีวิว</p>
+                            </div>
+                            <div className="flex-1 space-y-2 justify-center flex flex-col">
+                                <RatingBar label="5" pct={72} />
+                                <RatingBar label="4" pct={18} />
+                                <RatingBar label="3" pct={6} />
+                                <RatingBar label="2" pct={3} />
+                                <RatingBar label="1" pct={1} />
+                            </div>
+                        </div>
+
+                        {/* Write review */}
+                        {user && (
+                            <div className="bg-[#13131a] border border-[#2a2a38] rounded-xl p-5">
+                                <h3 className="text-sm font-bold text-[#f0f0f8] mb-3">เขียนรีวิว</h3>
+                                <div className="flex gap-1 mb-3">
+                                    {[1, 2, 3, 4, 5].map((s) => (
+                                        <button key={s} className="w-8 h-8 text-[#2a2a38] hover:text-[#e8ff47] transition-colors">
+                                            <svg viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                            </svg>
+                                        </button>
+                                    ))}
+                                </div>
+                                <textarea
+                                    placeholder="แชร์ประสบการณ์ของคุณ..."
+                                    rows={3}
+                                    className="w-full bg-[#0a0a0f] border border-[#2a2a38] focus:border-[#7c6bff] rounded-xl p-3 text-sm text-[#f0f0f8] placeholder:text-[#3a3a48] outline-none resize-none transition-colors"
+                                />
+                                <div className="flex justify-end mt-2">
+                                    <button className="px-4 py-2 rounded-lg bg-[#7c6bff] text-white text-sm font-bold hover:opacity-90 transition-opacity">
+                                        ส่งรีวิว
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Review list */}
+                        <div className="space-y-3">
+                            {place.reviews?.map((rv) => (
+                                <div key={rv.id} className="bg-[#13131a] border border-[#2a2a38] rounded-xl p-5">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-[#7c6bff]/20 border border-[#7c6bff]/30 flex items-center justify-center text-sm font-bold text-[#7c6bff]">
+                                                {rv.avatar}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-[#f0f0f8]">{rv.user}</p>
+                                                <p className="text-[10px] text-[#6b6b80]">{rv.date}</p>
+                                            </div>
+                                        </div>
+                                        <Stars rating={rv.rating} />
+                                    </div>
+                                    <p className="text-sm text-[#c0c0d0] leading-relaxed">{rv.comment}</p>
+                                    {rv.tags?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mt-3">
+                                            {rv.tags.map((tag) => (
+                                                <span key={tag} className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80]">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Skeleton ───────────────────────────────────────────────────────────
+function DetailSkeleton() {
+    return (
+        <div className="min-h-screen pt-[60px] bg-[#0a0a0f] animate-pulse">
+            <div className="max-w-4xl mx-auto px-4 pt-6 pb-20">
+                <div className="h-3 w-32 bg-[#1c1c26] rounded mb-4" />
+                <div className="h-72 bg-[#13131a] rounded-2xl border border-[#2a2a38] mb-6" />
+                <div className="h-6 w-48 bg-[#1c1c26] rounded mb-2" />
+                <div className="h-8 w-64 bg-[#1c1c26] rounded mb-4" />
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="h-40 bg-[#13131a] rounded-xl border border-[#2a2a38]" />
+                    <div className="h-40 bg-[#13131a] rounded-xl border border-[#2a2a38]" />
+                </div>
+            </div>
+        </div>
+    );
+}

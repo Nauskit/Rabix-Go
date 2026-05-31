@@ -5,6 +5,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Restaurants from "../pages/Restaurants";
 import Navbar from "../components/Navbar";
+import RestaurantDetail from "../pages/RestaurantDetail";
 
 function App() {
   // ── Global user state ──────────────────────────────────────
@@ -37,6 +38,7 @@ function App() {
         <Route path="/login" element={<Login onLogin={setUser} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/restaurants" element={<Restaurants user={user} />} />
+        <Route path="/restaurants/:id" element={<RestaurantDetail />} />
       </Routes>
     </div>
   );

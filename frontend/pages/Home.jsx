@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 const FEATURES = [
@@ -13,7 +14,15 @@ const STATS = [
     { val: "99.9%", label: "Uptime SLA" },
 ];
 
+
+
 export default function Home() {
+    const [token, setToken] = useState(null);
+    useEffect(() => {
+        const storedToken = localStorage.getItem('accessToken');
+        setToken(storedToken);
+    }, []);
+
     return (
         <div className="min-h-screen pt-[60px]">
             {/* ── Hero ── */}
@@ -37,22 +46,24 @@ export default function Home() {
                 </h1>
 
                 <p className="text-[#6b6b80] text-base max-w-md leading-relaxed mb-10">
-                    ระบบจัดการออเดอร์อาหารที่รองรับผู้ใช้พร้อมกันหลายแสนคน พร้อม GPS Tracking และ Realtime notification
+                    ระบบจัดการออเดอร์อาหารที่รองรับผู้ใช้พร้อมกันหลายแสนคน พร้อม Realtime notification
                 </p>
 
                 <div className="flex gap-3 flex-wrap justify-center">
                     <Link
-                        to="/register"
+                        to="/restaurants"
                         className="px-7 py-3.5 bg-[#e8ff47] text-[#0a0a0f] rounded-xl text-sm font-bold hover:-translate-y-0.5 transition-transform no-underline"
                     >
                         เริ่มใช้งาน →
                     </Link>
-                    <Link
-                        to="/login"
-                        className="px-7 py-3.5 bg-[#13131a] border border-[#2a2a38] text-[#f0f0f8] rounded-xl text-sm font-medium hover:border-[#3a3a48] transition-colors no-underline"
-                    >
-                        Login
-                    </Link>
+                    {!token && (
+                        <Link
+                            to="/login"
+                            className="px-7 py-3.5 bg-[#13131a] border border-[#2a2a38] text-[#f0f0f8] rounded-xl text-sm font-medium hover:border-[#3a3a48] transition-colors no-underline"
+                        >
+                            Login
+                        </Link>
+                    )}
                 </div>
             </section>
 

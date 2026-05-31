@@ -2,17 +2,11 @@ import { useState, useEffect } from "react";
 import RestaurantCard from "../components/RestaurantCard.jsx";
 import CreateRestaurantModal from "../components/CreateRestaurantModal.jsx";
 
-// ── Mock fallback ──────────────────────────────────────────────────────
-const MOCK = [
-    { id: 1, name: "ครัวคุณแม่", description: "อาหารไทยโฮมเมดรสชาติต้นตำรับ ทำสดใหม่ทุกวัน ใช้วัตถุดิบคัดสรรจากตลาด", category: "อาหารไทย", rating: 4.8, reviewCount: 128, imageUrl: "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=600&q=80", address: "ถ.สุขุมวิท กรุงเทพฯ", isOpen: true, priceRange: "฿฿", ownerId: "demo" },
-    { id: 2, name: "Tokyo Ramen House", description: "ราเมนสไตล์ญี่ปุ่นแท้ น้ำซุปเคี่ยว 18 ชั่วโมง สูตรพิเศษจาก Osaka", category: "อาหารญี่ปุ่น", rating: 4.6, reviewCount: 95, imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&q=80", address: "ถ.สีลม กรุงเทพฯ", isOpen: true, priceRange: "฿฿฿", ownerId: "other" },
-    { id: 3, name: "The Burger Lab", description: "Craft burger เนื้อแท้ 100% ชีสเยิ้ม ท็อปปิ้งไม่อั้น", category: "อาหารตะวันตก", rating: 4.5, reviewCount: 73, imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80", address: "ถ.เอกมัย กรุงเทพฯ", isOpen: false, priceRange: "฿฿", ownerId: "other" },
-    { id: 4, name: "Green Bowl", description: "Healthy bowl สลัดสดใหม่ superfood คาโลรี่ต่ำ อิ่มได้ทุกวัน", category: "เพื่อสุขภาพ", rating: 4.7, reviewCount: 210, imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80", address: "ถ.ทองหล่อ กรุงเทพฯ", isOpen: true, priceRange: "฿฿", ownerId: "demo" },
-    { id: 5, name: "Dimsum Palace", description: "ติ่มซำทำมือทุกชิ้น สดใหม่จากเตา หอมกรุ่น เปิดตั้งแต่เช้า", category: "อาหารจีน", rating: 4.9, reviewCount: 340, imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&q=80", address: "เยาวราช กรุงเทพฯ", isOpen: true, priceRange: "฿", ownerId: "other" },
-    { id: 6, name: "Pasta Felice", description: "พาสต้าสดทำมือ ซอสโฮมเมด วัตถุดิบนำเข้าจากอิตาลีแท้", category: "อาหารอิตาลี", rating: 4.6, reviewCount: 88, imageUrl: "https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=600&q=80", address: "ถ.อารีย์ กรุงเทพฯ", isOpen: true, priceRange: "฿฿฿", ownerId: "other" },
-];
 
-const ALL_CATS = ["ทั้งหมด", "อาหารไทย", "อาหารญี่ปุ่น", "อาหารตะวันตก", "อาหารจีน", "อาหารอิตาลี", "เพื่อสุขภาพ"];
+const CATEGORIES = {
+    "ร้านอาหาร": ["ทั้งหมด", "อาหารไทย", "อาหารญี่ปุ่น", "อาหารตะวันตก", "อาหารจีน", "อาหารอิตาลี", "เพื่อสุขภาพ"],
+    "สถานที่ท่องเที่ยว": ["ทั้งหมด", "ทะเล", "ภูเขา", "วัด", "ธรรมชาติ", "ช้อปปิ้ง"],
+};
 
 // ── Skeleton ───────────────────────────────────────────────────────────
 function Skeleton() {
@@ -34,22 +28,30 @@ export default function Restaurants({ user }) {
     const [restaurants, setRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [activeGroup, setActiveGroup] = useState("ร้านอาหาร");
     const [activeTab, setActiveTab] = useState("ทั้งหมด");
     const [showModal, setShowModal] = useState(false);
 
     // Fetch restaurants
     useEffect(() => {
-        setLoading(true);
-        const token = localStorage.getItem("accessToken");
-        fetch("http://localhost:3000/restaurants", {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-        })
-            .then((r) => r.json())
-            .then((d) => setRestaurants(Array.isArray(d) ? d : MOCK))
-            .catch(() => setRestaurants(MOCK))
-            .finally(() => setLoading(false));
-    }, []);
+        const fetchPlaces = async () => {
+            try {
+                setLoading(true);
+                const token = localStorage.getItem("accessToken");
+                const res = await fetch("http://localhost:3000/places?page=1&limit=12", {
+                    headers: token ? { Authorization: `Bearor ${token}` } : {},
+                });
+                const d = await res.json();
+                setRestaurants(Array.isArray(d.data) ? d.data : []);
 
+            } catch (error) {
+                setRestaurants([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPlaces();
+    }, []);
     function handleCreated(r) {
         setRestaurants((prev) => [r, ...prev]);
         setShowModal(false);
@@ -63,7 +65,8 @@ export default function Restaurants({ user }) {
         return matchCat && matchSearch;
     });
 
-    const openCount = filtered.filter((r) => r.isOpen).length;
+    const openCount = filtered.filter((r) => r.is_open).length;
+
 
     return (
         <div className="min-h-screen pt-[60px]">
@@ -119,10 +122,44 @@ export default function Restaurants({ user }) {
 
             {/* ── Category tabs + action bar ────────────────────────── */}
             <div className="sticky top-[60px] z-30 bg-[#0a0a0f]/95 backdrop-blur-md border-b border-[#2a2a38]">
-                <div className="max-w-5xl mx-auto px-4 flex items-center justify-between gap-4 py-3">
-                    {/* Tabs — scrollable */}
-                    <div className="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
-                        {ALL_CATS.map((cat) => (
+                <div className="max-w-5xl mx-auto px-4 py-3 space-y-2">  {/* ← เปลี่ยนเป็น space-y-2 */}
+
+                    {/* แถวที่ 1 — Group + ปุ่ม action */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                            {Object.keys(CATEGORIES).map((group) => (
+                                <button
+                                    key={group}
+                                    onClick={() => { setActiveGroup(group); setActiveTab("ทั้งหมด"); }}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeGroup === group
+                                        ? "bg-[#7c6bff] text-white"
+                                        : "text-[#6b6b80] hover:text-[#f0f0f8]"
+                                        }`}
+                                >
+                                    {group} ›
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <button className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#7c6bff]/20 border border-[#7c6bff]/40 text-[#7c6bff] text-xs font-bold hover:bg-[#7c6bff]/30 transition-colors">
+                                <span className="text-sm leading-none">＋</span>
+                                สร้าง Route
+                            </button>
+                            {user && (
+                                <button
+                                    onClick={() => setShowModal(true)}
+                                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#7c6bff]/20 border border-[#7c6bff]/40 text-[#7c6bff] text-xs font-bold hover:bg-[#7c6bff]/30 transition-colors"
+                                >
+                                    <span className="text-sm leading-none">＋</span>
+                                    เพิ่มร้าน
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* แถวที่ 2 — Sub tabs */}
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                        {CATEGORIES[activeGroup].map((cat) => (
                             <button
                                 key={cat}
                                 onClick={() => setActiveTab(cat)}
@@ -136,16 +173,6 @@ export default function Restaurants({ user }) {
                         ))}
                     </div>
 
-                    {/* Add restaurant button (logged-in only) */}
-                    {user && (
-                        <button
-                            onClick={() => setShowModal(true)}
-                            className="shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#7c6bff]/20 border border-[#7c6bff]/40 text-[#7c6bff] text-xs font-bold hover:bg-[#7c6bff]/30 transition-colors"
-                        >
-                            <span className="text-sm leading-none">＋</span>
-                            เพิ่มร้าน
-                        </button>
-                    )}
                 </div>
             </div>
 

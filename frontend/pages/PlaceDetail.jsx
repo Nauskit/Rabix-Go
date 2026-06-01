@@ -63,7 +63,7 @@ function RatingBar({ label, pct }) {
 }
 
 // ── Main ───────────────────────────────────────────────────────────────
-export default function RestaurantDetail({ onBack, user }) {
+export default function PlaceDetail({ onBack, user }) {
     const [place, setPlace] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeImg, setActiveImg] = useState(0);
@@ -104,7 +104,7 @@ export default function RestaurantDetail({ onBack, user }) {
                     <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
-                    <Link to={'/restaurants'}>
+                    <Link to={'/places'}>
                         กลับไปหน้าร้านอาหาร
                     </Link>
                 </button>
@@ -173,9 +173,9 @@ export default function RestaurantDetail({ onBack, user }) {
                             {place.name}
                         </h1>
                         <div className="flex items-center gap-3 mt-2">
-                            <Stars rating={place.rating} size="lg" />
-                            <span className="text-sm font-bold text-[#f0f0f8]">{place.rating}</span>
-                            <span className="text-xs text-[#6b6b80]">({place.reviewCount} รีวิว)</span>
+                            <Stars rating={place.avg_rating} size="lg" />
+                            <span className="text-sm font-bold text-[#f0f0f8]">{place.avg_rating}</span>
+                            <span className="text-xs text-[#6b6b80]">({place.review_count} รีวิว)</span>
                         </div>
                     </div>
 
@@ -187,19 +187,21 @@ export default function RestaurantDetail({ onBack, user }) {
                         {addedToRoute ? "✓ เพิ่มใน Route แล้ว" : "＋ เพิ่มใน Route"}
                     </button>
                 </div>
-
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mt-4">
-                    {place.tags?.map((tag) => (
-                        <span key={tag} className="text-[11px] px-3 py-1 rounded-full bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80]">
-                            {tag}
-                        </span>
-                    ))}
+                    {place.top_tags?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                            {place.top_tags?.map((tag) => (
+                                <span key={tag} className="text-[11px] px-3 py-1 rounded-full bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80] cursor-pointer transition-all hover:border-[#7c6bff] hover:text-[#f0f0f8] hover:bg-[#7c6bff]/10">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
-
                 {/* ── Tabs ─────────────────────────────────────────────────── */}
                 <div className="flex gap-1 mt-8 bg-[#13131a] border border-[#2a2a38] rounded-xl p-1">
-                    {[{ key: "info", label: "ข้อมูลร้าน" }, { key: "reviews", label: `รีวิว (${place.reviewCount})` }].map((t) => (
+                    {[{ key: "info", label: "ข้อมูลร้าน" }, { key: "reviews", label: `รีวิว (${place.review_count})` }].map((t) => (
                         <button
                             key={t.key}
                             onClick={() => setTab(t.key)}
@@ -287,15 +289,15 @@ export default function RestaurantDetail({ onBack, user }) {
                         <div className="bg-[#13131a] border border-[#2a2a38] rounded-xl p-5 flex gap-6">
                             <div className="text-center shrink-0">
                                 <div className="font-black text-5xl text-[#e8ff47]" style={{ fontFamily: "Syne, sans-serif" }}>{place.rating}</div>
-                                <Stars rating={place.rating} size="lg" />
-                                <p className="text-[11px] text-[#6b6b80] mt-1">{place.reviewCount} รีวิว</p>
+                                <Stars rating={place.avg_rating} size="lg" />
+                                <p className="text-[11px] text-[#6b6b80] mt-1">{place.review_count} รีวิว</p>
                             </div>
                             <div className="flex-1 space-y-2 justify-center flex flex-col">
-                                <RatingBar label="5" pct={72} />
-                                <RatingBar label="4" pct={18} />
-                                <RatingBar label="3" pct={6} />
-                                <RatingBar label="2" pct={3} />
-                                <RatingBar label="1" pct={1} />
+                                <RatingBar label="5" pct={0} />
+                                <RatingBar label="4" pct={0} />
+                                <RatingBar label="3" pct={0} />
+                                <RatingBar label="2" pct={0} />
+                                <RatingBar label="1" pct={0} />
                             </div>
                         </div>
 
@@ -329,19 +331,33 @@ export default function RestaurantDetail({ onBack, user }) {
                         <div className="space-y-3">
                             {place.reviews?.map((rv) => (
                                 <div key={rv.id} className="bg-[#13131a] border border-[#2a2a38] rounded-xl p-5">
+
                                     <div className="flex items-start justify-between mb-3">
                                         <div className="flex items-center gap-3">
+
+                                            {/* Avatar */}
                                             <div className="w-8 h-8 rounded-full bg-[#7c6bff]/20 border border-[#7c6bff]/30 flex items-center justify-center text-sm font-bold text-[#7c6bff]">
-                                                {rv.avatar}
+                                                {rv.username
+                                                    ? rv.username[0].toUpperCase()
+                                                    : rv.avatar ?? "?"}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-[#f0f0f8]">{rv.user}</p>
-                                                <p className="text-[10px] text-[#6b6b80]">{rv.date}</p>
+                                                <p className="text-sm font-bold text-[#f0f0f8]">
+                                                    {rv.username ?? "ผู้ใช้ไม่ระบุชื่อ"}
+                                                </p>
+                                                <p className="text-[10px] text-[#6b6b80]">
+                                                    {new Date(rv.created_at).toLocaleDateString('th-TH')}
+                                                </p>
                                             </div>
                                         </div>
                                         <Stars rating={rv.rating} />
                                     </div>
-                                    <p className="text-sm text-[#c0c0d0] leading-relaxed">{rv.comment}</p>
+                                    {/* comment */}
+                                    <p className="text-sm text-[#c0c0d0] leading-relaxed">
+                                        {rv.comment ? rv.comment : `มีการให้คะแนน ${rv.rating} คะแนน`}
+                                    </p>
+
+                                    {/* Tags */}
                                     {rv.tags?.length > 0 && (
                                         <div className="flex flex-wrap gap-1.5 mt-3">
                                             {rv.tags.map((tag) => (
@@ -350,6 +366,12 @@ export default function RestaurantDetail({ onBack, user }) {
                                                 </span>
                                             ))}
                                         </div>
+                                    )}
+
+                                    {!rv.comment && rv.tags?.length > 0 && (
+                                        <p className="text-[11px] text-[#6b6b80] mt-2">
+                                            vote tag: {rv.tags.join(", ")}
+                                        </p>
                                     )}
                                 </div>
                             ))}

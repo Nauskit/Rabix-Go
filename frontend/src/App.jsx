@@ -3,9 +3,9 @@ import { Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-import Restaurants from "../pages/Restaurants";
+import Places from "../pages/Places";
 import Navbar from "../components/Navbar";
-import RestaurantDetail from "../pages/RestaurantDetail";
+import PlaceDetail from "../pages/PlaceDetail";
 
 function App() {
   // ── Global user state ──────────────────────────────────────
@@ -37,8 +37,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login onLogin={setUser} />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/restaurants" element={<Restaurants user={user} />} />
-        <Route path="/restaurants/:id" element={<RestaurantDetail />} />
+        <Route path="/places" element={<Places user={user} />} />
+        <Route path="/places/:id" element={<PlaceDetail user={user} />} />
       </Routes>
     </div>
   );

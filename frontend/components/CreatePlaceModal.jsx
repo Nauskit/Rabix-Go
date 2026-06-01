@@ -3,7 +3,7 @@ import { Input, Btn, ErrorAlert } from "./FormElements.jsx";
 
 const CATEGORIES = ["อาหารไทย", "อาหารญี่ปุ่น", "อาหารตะวันตก", "อาหารจีน", "อาหารอิตาลี", "อาหารอินเดีย", "เพื่อสุขภาพ", "อื่น ๆ"];
 
-export default function CreateRestaurantModal({ onClose, onCreated }) {
+export default function CreatePlaceModal({ onClose, onCreated }) {
     const [form, setForm] = useState({
         name: "",
         description: "",
@@ -110,8 +110,8 @@ export default function CreateRestaurantModal({ onClose, onCreated }) {
                                         type="button"
                                         onClick={() => setForm((f) => ({ ...f, priceRange: p }))}
                                         className={`py-2 rounded-lg text-xs font-bold transition-all ${form.priceRange === p
-                                                ? "bg-[#e8ff47] text-[#0a0a0f]"
-                                                : "bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80] hover:border-[#3a3a48]"
+                                            ? "bg-[#e8ff47] text-[#0a0a0f]"
+                                            : "bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80] hover:border-[#3a3a48]"
                                             }`}
                                     >
                                         {p}

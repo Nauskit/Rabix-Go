@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import RestaurantCard from "../components/RestaurantCard.jsx";
-import CreateRestaurantModal from "../components/CreateRestaurantModal.jsx";
+import PlaceCard from "../components/PlaceCard.jsx";
+import CreatePlaceModal from "../components/CreatePlaceModal.jsx";
 
 
 const CATEGORIES = {
@@ -24,8 +24,8 @@ function Skeleton() {
 }
 
 // ── Main ───────────────────────────────────────────────────────────────
-export default function Restaurants({ user }) {
-    const [restaurants, setRestaurants] = useState([]);
+export default function Places({ user }) {
+    const [places, setPlaces] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [activeGroup, setActiveGroup] = useState("ร้านอาหาร");
@@ -42,10 +42,10 @@ export default function Restaurants({ user }) {
                     headers: token ? { Authorization: `Bearor ${token}` } : {},
                 });
                 const d = await res.json();
-                setRestaurants(Array.isArray(d.data) ? d.data : []);
+                setPlaces(Array.isArray(d.data) ? d.data : []);
 
             } catch (error) {
-                setRestaurants([]);
+                setPlaces([]);
             } finally {
                 setLoading(false);
             }
@@ -53,12 +53,12 @@ export default function Restaurants({ user }) {
         fetchPlaces();
     }, []);
     function handleCreated(r) {
-        setRestaurants((prev) => [r, ...prev]);
+        setPlaces((prev) => [r, ...prev]);
         setShowModal(false);
     }
 
     // Filter
-    const filtered = restaurants.filter((r) => {
+    const filtered = places.filter((r) => {
         const matchCat = activeTab === "ทั้งหมด" || r.category === activeTab;
         const q = search.toLowerCase();
         const matchSearch = !q || r.name.toLowerCase().includes(q) || r.description?.toLowerCase().includes(q);
@@ -80,7 +80,7 @@ export default function Restaurants({ user }) {
 
                 <div className="inline-flex items-center gap-2 bg-[#1c1c26] border border-[#2a2a38] rounded-full px-3.5 py-1.5 text-xs text-[#6b6b80] mb-6">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#e8ff47] animate-pulse" />
-                    {loading ? "กำลังโหลด..." : `${restaurants.length} ร้านในระบบ`}
+                    {loading ? "กำลังโหลด..." : `${places.length} ร้านในระบบ`}
                 </div>
 
                 <h1
@@ -227,8 +227,8 @@ export default function Restaurants({ user }) {
                                 className="opacity-0 animate-[fadeUp_0.4s_ease_forwards]"
                                 style={{ animationDelay: `${i * 60}ms` }}
                             >
-                                <RestaurantCard
-                                    restaurant={r}
+                                <PlaceCard
+                                    place={r}
                                     isOwner={user?.username === r.ownerId || user?.username === r.owner}
                                 />
                             </div>
@@ -237,7 +237,7 @@ export default function Restaurants({ user }) {
                 )}
 
                 {/* CTA for guests */}
-                {!user && !loading && restaurants.length > 0 && (
+                {!user && !loading && places.length > 0 && (
                     <div className="mt-16 bg-[#13131a] border border-[#2a2a38] rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-5">
                         <div>
                             <p
@@ -268,7 +268,7 @@ export default function Restaurants({ user }) {
 
             {/* Modal */}
             {showModal && user && (
-                <CreateRestaurantModal
+                <CreatePlaceModal
                     onClose={() => setShowModal(false)}
                     onCreated={handleCreated}
                 />

@@ -41,17 +41,17 @@ export default function Home() {
                     className="font-black text-5xl md:text-6xl leading-tight tracking-tighter max-w-2xl mb-6"
                     style={{ fontFamily: "Syne, sans-serif" }}
                 >
-                    จัดการออเดอร์<br />
-                    <span className="text-[#e8ff47]">แบบ Realtime</span>
+                    Rabix
+                    <span className="text-[#e8ff47]"> Go</span>
                 </h1>
 
                 <p className="text-[#6b6b80] text-base max-w-md leading-relaxed mb-10">
-                    ระบบจัดการออเดอร์อาหารที่รองรับผู้ใช้พร้อมกันหลายแสนคน พร้อม Realtime notification
+                    ระบบจัดการ One day tip ด้วยการสร้าง Route
                 </p>
 
                 <div className="flex gap-3 flex-wrap justify-center">
                     <Link
-                        to="/restaurants"
+                        to="/places"
                         className="px-7 py-3.5 bg-[#e8ff47] text-[#0a0a0f] rounded-xl text-sm font-bold hover:-translate-y-0.5 transition-transform no-underline"
                     >
                         เริ่มใช้งาน →

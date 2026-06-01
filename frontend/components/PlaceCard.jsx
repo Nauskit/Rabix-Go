@@ -26,18 +26,18 @@ function Stars({ rating }) {
     );
 }
 
-export default function RestaurantCard({ restaurant, isOwner }) {
+export default function PlaceCard({ place, isOwner }) {
     const [imgErr, setImgErr] = useState(false);
-    const coverImage = restaurant.images?.[0] ?? null;
+    const coverImage = place.images?.[0] ?? null;
     return (
-        <Link to={`/restaurants/${restaurant.id}`} className="block no-underline">  {/* ← เพิ่ม */}
+        <Link to={`/places/${place.id}`} className="block no-underline">  {/* ← เพิ่ม */}
             <div className="group bg-[#13131a] border border-[#2a2a38] rounded-xl overflow-hidden hover:border-[#7c6bff] transition-all duration-300 hover:-translate-y-0.5 cursor-pointer">
                 {/* Image */}
                 <div className="relative h-44 bg-[#1c1c26] overflow-hidden">
                     {!imgErr && coverImage ? (
                         <img
                             src={coverImage}
-                            alt={restaurant.name}
+                            alt={place.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80"
                             onError={() => setImgErr(true)}
                         />
@@ -51,15 +51,15 @@ export default function RestaurantCard({ restaurant, isOwner }) {
                     {/* Top badges */}
                     <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
                         <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm border ${restaurant.is_open
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm border ${place.is_open
                                 ? "bg-[#e8ff47]/15 border-[#e8ff47]/30 text-[#e8ff47]"
                                 : "bg-[#6b6b80]/15 border-[#6b6b80]/30 text-[#6b6b80]"
                                 }`}
                         >
-                            {restaurant.is_open ? "● เปิดอยู่" : "○ ปิดแล้ว"}
+                            {place.is_open ? "● เปิดอยู่" : "○ ปิดแล้ว"}
                         </span>
-                        <span className={`text-xs font-black px-2 py-0.5 rounded-full bg-[#0a0a0f]/80 backdrop-blur-sm ${PRICE_COLOR[restaurant.priceRange] ?? "text-[#6b6b80]"}`}>
-                            {restaurant.priceRange}
+                        <span className={`text-xs font-black px-2 py-0.5 rounded-full bg-[#0a0a0f]/80 backdrop-blur-sm ${PRICE_COLOR[place.priceRange] ?? "text-[#6b6b80]"}`}>
+                            {place.priceRange}
                         </span>
                     </div>
 
@@ -77,35 +77,42 @@ export default function RestaurantCard({ restaurant, isOwner }) {
                 <div className="p-4">
                     <div className="flex items-center justify-between mb-1.5">
                         <span className="text-[10px] font-bold text-[#7c6bff] uppercase tracking-widest">
-                            {restaurant.place_type}
+                            {place.place_type}
                         </span>
                         <div className="flex items-center gap-1.5">
-                            <Stars rating={restaurant.rating ?? 0} />
-                            <span className="text-xs font-bold text-[#f0f0f8]">{restaurant.rating ?? "—"}</span>
-                            <span className="text-[10px] text-[#6b6b80]">({restaurant.reviewCount ?? 0})</span>
+                            <Stars rating={place.avg_rating ?? 0} />
+                            <span className="text-xs font-bold text-[#f0f0f8]">{place.avg_rating ?? "—"}</span>
+                            <span className="text-[10px] text-[#6b6b80]">({place.review_count ?? 0})</span>
                         </div>
                     </div>
-                    <span className="text-xs font-bold text-[#f0f0f8]">
-                        ร้านอาหาร
-                    </span>
+                    {place.top_tags?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                            {place.top_tags.slice(0, 3).map((tag) => (
+                                <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80]">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
                     <h3
                         className="font-black text-base text-[#f0f0f8] mb-1.5 group-hover:text-[#e8ff47] transition-colors line-clamp-1"
                         style={{ fontFamily: "Syne, sans-serif" }}
                     >
-                        {restaurant.name}
+                        {place.name}
                     </h3>
 
                     <p className="text-xs text-[#6b6b80] leading-relaxed line-clamp-2 mb-3">
-                        {restaurant.description}
+                        {place.description}
                     </p>
+
 
                     <div className="flex items-center gap-1.5 text-[11px] text-[#3a3a48]">
                         <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span className="truncate">{restaurant.address}</span>
+                        <span className="truncate">{place.address}</span>
                     </div>
                 </div>
             </div>

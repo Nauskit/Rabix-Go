@@ -50,9 +50,32 @@ exports.getPlaces = async (req, res) => {
         const limit = Number(req.query.limit) || 10;
         const offset = (page - 1) * limit;
         const getLimit = await pool.query(
-            `SELECT p.*, COALESCE(JSON_AGG(pi.image_url) FILTER (WHERE pi.image_url IS NOT NULL),'[]') AS images
+            `SELECT p.*,
+            COALESCE(
+                JSON_AGG(DISTINCT pi.image_url) FILTER (WHERE pi.image_url is NOT NULL),
+                '[]'
+                ) AS images,
+                 COALESCE(
+                 (
+                    SELECT JSON_AGG(tag_summary.name)
+                    FROM (
+                        SELECT t.name, COUNT(*) AS vote_count
+                        FROM review_tags rt
+                        JOIN reviews r ON r.id = rt.review_id
+                        JOIN tags t ON t.id = rt.tag_id
+                        WHERE r.place_id = p.id
+                        GROUP BY t.id, t.name
+                        ORDER BY vote_count DESC
+                        LIMIT 5
+                    ) AS tag_summary
+                 ),
+                 '[]'
+                ) AS top_tags,
+                COUNT(DISTINCT r.id) AS review_count,
+                ROUND(AVG(r.rating), 1) AS avg_rating
             FROM places p
-            LEFT JOIN place_images pi on pi.place_id = p.id
+            LEFT JOIN place_images pi ON pi.place_id = p.id
+            LEFT JOIN reviews r ON r.place_id = p.id
             GROUP BY p.id
             ORDER BY p.created_at DESC
             LIMIT $1 OFFSET $2`,
@@ -78,13 +101,60 @@ exports.getPlaceById = async (req, res) => {
             `SELECT 
                 p.*,
                 COALESCE(
-                    JSON_AGG(pi.image_url) FILTER (WHERE pi.image_url IS NOT NULL),
+                    JSON_AGG(DISTINCT pi.image_url) FILTER (WHERE pi.image_url IS NOT NULL),
                     '[]'
-                ) AS images
-             FROM places p
-             LEFT JOIN place_images pi ON pi.place_id = p.id
-             WHERE p.id = $1
-             GROUP BY p.id`, [id]
+                )AS images,
+                COALESCE (
+                    (
+                        SELECT JSON_AGG(tag_summary.name)
+                        FROM(
+                            SELECT t.name, COUNT(*) AS vote_count
+                            FROM review_tags rt
+                            JOIN reviews r ON r.id = rt.review_id
+                            JOIN tags t ON t.id = rt.tag_id
+                            WHERE r.place_id = p.id
+                            GROUP BY t.id, t.name
+                            ORDER BY vote_count DESC
+                            LIMIT 5
+                        )AS tag_summary
+                    ),
+                '[]'
+                )AS top_tags,
+                COUNT(DISTINCT r.id) AS review_count,
+                ROUND(AVG(r.rating), 1) AS avg_rating,
+                COALESCE(
+                    (
+                        SELECT JSON_AGG(review_summary)
+                        FROM (
+                            SELECT
+                                r2.id,
+                                r2.comment,
+                                r2.rating,
+                                r2.created_at,
+                                u.username,
+                                COALESCE(
+                                    (
+                                        SELECT JSON_AGG(t.name)
+                                        FROM review_tags rt
+                                        JOIN tags t ON t.id = rt.tag_id
+                                        WHERE rt.review_id = r2.id
+                                    ),
+                                    '[]'
+                                )AS tags
+                            FROM reviews r2
+                            JOIN users u ON u.id = r2.user_id
+                            WHERE r2.place_id = p.id
+                            ORDER BY r2.created_at DESC
+                            LIMIT 5
+                        ) AS review_summary
+                    ),
+                    '[]'
+                ) AS reviews
+            FROM places p
+            LEFT JOIN place_images pi ON pi.place_id = p.id
+            LEFT JOIN reviews r ON r.place_id = p.id
+            WHERE p.id = $1
+            GROUP BY p.id`, [id]
         )
         if (getPlaceId.rows.length === 0) {
             return res.status(400).json({

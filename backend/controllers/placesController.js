@@ -213,7 +213,7 @@ exports.addPlaceImage = async (req, res) => {
 
 
         const addImage = await pool.query(
-            "INSERT INTO places_images (place_id, image_url) VALUES ($1, $2) RETURNING *",
+            "INSERT INTO place_images (place_id, image_url) VALUES ($1, $2) RETURNING *",
             [id, image_url]
         )
 

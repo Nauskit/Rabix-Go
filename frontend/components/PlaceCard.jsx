@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 const PRICE_COLOR = {
-    "฿": "text-[#e8ff47]",
-    "฿฿": "text-[#e8ff47]/80",
-    "฿฿฿": "text-[#7c6bff]",
-    "฿฿฿฿": "text-[#ff4d6d]",
+    "฿": "text-[#e8ff47]", //100-250
+    "฿฿": "text-[#e8ff47]/80", // 200-500
+    "฿฿฿": "text-[#7c6bff]", // 300-800
+    "฿฿฿฿": "text-[#ff4d6d]", //  400-1000+
 };
 
 function Stars({ rating }) {

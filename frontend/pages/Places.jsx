@@ -39,7 +39,7 @@ export default function Places({ user }) {
                 setLoading(true);
                 const token = localStorage.getItem("accessToken");
                 const res = await fetch("http://localhost:3000/places?page=1&limit=12", {
-                    headers: token ? { Authorization: `Bearor ${token}` } : {},
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
                 const d = await res.json();
                 setPlaces(Array.isArray(d.data) ? d.data : []);
@@ -122,7 +122,7 @@ export default function Places({ user }) {
 
             {/* ── Category tabs + action bar ────────────────────────── */}
             <div className="sticky top-[60px] z-30 bg-[#0a0a0f]/95 backdrop-blur-md border-b border-[#2a2a38]">
-                <div className="max-w-5xl mx-auto px-4 py-3 space-y-2">  {/* ← เปลี่ยนเป็น space-y-2 */}
+                <div className="max-w-5xl mx-auto px-4 py-3 space-y-2">
 
                     {/* แถวที่ 1 — Group + ปุ่ม action */}
                     <div className="flex items-center justify-between">

@@ -1,37 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 
-// ── Mock Data ──────────────────────────────────────────────────────────
-const MOCK_DETAIL = {
-    id: 1,
-    name: "ครัวคุณแม่",
-    description: "อาหารไทยโฮมเมดรสชาติต้นตำรับ ทำสดใหม่ทุกวัน ใช้วัตถุดิบคัดสรรจากตลาดสด ทุกเมนูปรุงด้วยใจ เหมือนได้กินข้าวที่บ้าน",
-    category: "อาหารไทย",
-    rating: 4.8,
-    reviewCount: 128,
-    imageUrl: "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=1200&q=80",
-    address: "123 ถ.สุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพฯ 10110",
-    isOpen: true,
-    priceRange: "฿฿",
-    phone: "02-123-4567",
-    avgPrice: 250,
-    tags: ["ถ่ายรูปสวย", "บรรยากาศดี", "อาหารอร่อย", "เงียบสงบ", "ที่จอดรถง่าย"],
-    hours: [
-        { day: "จันทร์ - ศุกร์", open: "10:00", close: "21:00", closed: false },
-        { day: "เสาร์ - อาทิตย์", open: "09:00", close: "22:00", closed: false },
-    ],
-    images: [
-        "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=600&q=80",
-        "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80",
-        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80",
-        "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600&q=80",
-    ],
-    reviews: [
-        { id: 1, user: "นนท์ สมใจ", avatar: "น", rating: 5, comment: "อร่อยมากๆ เหมือนข้าวบ้านจริงๆ บรรยากาศเงียบสงบ เหมาะมาสักคนเดียวอ่านหนังสือ", date: "2 วันที่แล้ว", tags: ["ถ่ายรูปสวย", "อาหารอร่อย"] },
-        { id: 2, user: "มิ้น พิชญา", avatar: "ม", rating: 4, comment: "ราคาสมเหตุสมผล อาหารรสชาติดี แต่รอนานหน่อยช่วงเที่ยง", date: "1 สัปดาห์ที่แล้ว", tags: ["บรรยากาศดี"] },
-        { id: 3, user: "ต้น ธนกร", avatar: "ต", rating: 5, comment: "มาซ้ำหลายครั้งแล้ว รสชาติคงที่ทุกครั้ง ประทับใจมาก", date: "2 สัปดาห์ที่แล้ว", tags: ["อาหารอร่อย", "เงียบสงบ"] },
-    ],
-};
 
 // ── Stars ──────────────────────────────────────────────────────────────
 function Stars({ rating, size = "sm" }) {
@@ -65,6 +34,8 @@ function RatingBar({ label, pct }) {
 // ── Main ───────────────────────────────────────────────────────────────
 export default function PlaceDetail({ onBack, user }) {
     const [place, setPlace] = useState(null);
+    const [tags, setTags] = useState([]);
+    const [selectTags, setSelectTag] = useState([])
     const [loading, setLoading] = useState(true);
     const [activeImg, setActiveImg] = useState(0);
     const [tab, setTab] = useState("info"); // info | reviews
@@ -73,23 +44,38 @@ export default function PlaceDetail({ onBack, user }) {
     const { id } = useParams();
 
     useEffect(() => {
-        const fetchPlaces = async () => {
+        const fetchPlaceDetail = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`http://localhost:3000/places/${id}`)
-                const d = await res.json();
-                setPlace(d.data)
+                const [placeRes, tagsRes] = await Promise.all([
+                    fetch(`http://localhost:3000/places/${id}`),
+                    fetch('http://localhost:3000/tags')
+                ]);
+                const placeData = await placeRes.json();
+                const tagsData = await tagsRes.json();
+                setPlace(placeData.data);
+                setTags(tagsData.data);
             } catch (error) {
                 console.log(error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchPlaces();
+        fetchPlaceDetail();
     }, [id])
 
+    //toggle tags
+    const toggleTag = (tagId) => {
+        setSelectTag(prev =>
+            prev.includes(tagId)
+                ? prev.filter(id => id !== tagId)
+                : [...prev, tagId]
+        )
+    }
+
+
     if (loading) return <DetailSkeleton />;
-    if (!place) return null;
+    if (!place || !tags) return null;
 
     const PRICE_COLOR = { "฿": "text-[#e8ff47]", "฿฿": "text-[#e8ff47]/80", "฿฿฿": "text-[#7c6bff]", "฿฿฿฿": "text-[#ff4d6d]" };
 
@@ -319,6 +305,19 @@ export default function PlaceDetail({ onBack, user }) {
                                     rows={3}
                                     className="w-full bg-[#0a0a0f] border border-[#2a2a38] focus:border-[#7c6bff] rounded-xl p-3 text-sm text-[#f0f0f8] placeholder:text-[#3a3a48] outline-none resize-none transition-colors"
                                 />
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                    {tags.map(tag => (
+                                        <button
+                                            key={tag.id}
+                                            onClick={() => toggleTag(tag.id)}
+                                            className={`text-[11px] px-3 py-1.5 rounded-full border transition-all font-medium ${selectTags.includes(tag.id)
+                                                ? "bg-[#7c6bff] border-[#7c6bff] text-white"
+                                                : "bg-[#0a0a0f] border-[#2a2a38] text-[#6b6b80] hover:border-[#7c6bff] hover:text-[#f0f0f8]"
+                                                }`}>
+                                            {tag.name}
+                                        </button>
+                                    ))}
+                                </div>
                                 <div className="flex justify-end mt-2">
                                     <button className="px-4 py-2 rounded-lg bg-[#7c6bff] text-white text-sm font-bold hover:opacity-90 transition-opacity">
                                         ส่งรีวิว

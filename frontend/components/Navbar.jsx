@@ -8,6 +8,8 @@ export default function Navbar({ user, onLogout }) {
     const dropRef = useRef(null);
 
     useEffect(() => {
+
+
         function handler(e) {
             if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false);
         }
@@ -72,7 +74,7 @@ export default function Navbar({ user, onLogout }) {
                                         </p>
                                     </div>
                                     <Link
-                                        to="/restaurants"
+                                        to="/places"
                                         onClick={() => setDropOpen(false)}
                                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#6b6b80] hover:text-[#f0f0f8] hover:bg-[#1c1c26] transition-colors no-underline"
                                     >

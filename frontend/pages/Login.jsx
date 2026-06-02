@@ -35,7 +35,8 @@ export default function Login({ onLogin }) {
             onLogin?.({ username: data.username ?? form.email.split("@")[0] });
             window.dispatchEvent(new Event("auth"));
 
-            navigate("/restaurants");
+
+            navigate("/places");
         } catch (err) {
             setError(err.message);
         } finally {

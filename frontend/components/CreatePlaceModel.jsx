@@ -3,7 +3,7 @@ import { Input, Btn, ErrorAlert } from "./FormElements.jsx";
 
 const CATEGORIES = ["อาหารไทย", "อาหารญี่ปุ่น", "อาหารตะวันตก", "อาหารจีน", "อาหารอิตาลี", "อาหารอินเดีย", "เพื่อสุขภาพ", "อื่น ๆ"];
 
-export default function CreatePlaceModal({ onClose, onCreated }) {
+export default function CreatePlaceModel({ onClose, onCreated }) {
     const [form, setForm] = useState({
         name: "",
         description: "",

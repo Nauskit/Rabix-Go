@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 
 // ── Stars ──────────────────────────────────────────────────────────────
 function Stars({ rating, size = "sm" }) {
@@ -41,6 +51,7 @@ export default function PlaceDetail({ onBack, user }) {
     const [tab, setTab] = useState("info"); // info | reviews
     const [saved, setSaved] = useState(false);
     const [addedToRoute, setAddedToRoute] = useState(false);
+    const [rating, setRating] = useState(null);
     const { id } = useParams();
 
     useEffect(() => {
@@ -71,6 +82,14 @@ export default function PlaceDetail({ onBack, user }) {
                 ? prev.filter(id => id !== tagId)
                 : [...prev, tagId]
         )
+    }
+
+    const handleRatingClick = (value) => {
+        if (rating === value) {
+            setRating(null);
+        } else {
+            setRating(value);
+        }
     }
 
 
@@ -252,15 +271,27 @@ export default function PlaceDetail({ onBack, user }) {
 
                         {/* Map placeholder */}
                         <div className="bg-[#13131a] border border-[#2a2a38] rounded-xl overflow-hidden">
-                            <div className="h-40 bg-[#1c1c26] flex items-center justify-center relative">
-                                <div className="absolute inset-0 opacity-10"
-                                    style={{ backgroundImage: "repeating-linear-gradient(0deg,#7c6bff 0,#7c6bff 1px,transparent 0,transparent 50%),repeating-linear-gradient(90deg,#7c6bff 0,#7c6bff 1px,transparent 0,transparent 50%)", backgroundSize: "30px 30px" }}
-                                />
-                                <div className="text-center z-10">
-                                    <div className="text-3xl mb-2">📍</div>
-                                    <p className="text-xs text-[#6b6b80]">แผนที่</p>
+                            {place.latitude && place.longitude ? (
+                                <MapContainer
+                                    center={[place.latitude, place.longitude]}
+                                    zoom={15}
+                                    style={{ height: "240px", width: "100%" }}
+                                    scrollWheelZoom={false}
+                                >
+                                    <TileLayer
+                                        attribution='&copy; OpenStreetMap'
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    />
+                                    <Marker position={[place.latitude, place.longitude]}>
+                                        <Popup>{place.name}</Popup>
+                                    </Marker>
+                                </MapContainer>
+                            ) : (
+                                // fallback ถ้าไม่มี lat/lng
+                                <div className="h-40 bg-[#1c1c26] flex items-center justify-center">
+                                    <p className="text-xs text-[#6b6b80]">ไม่มีข้อมูลแผนที่</p>
                                 </div>
-                            </div>
+                            )}
                             <div className="p-4">
                                 <p className="text-xs text-[#6b6b80] truncate">{place.address}</p>
                             </div>
@@ -293,7 +324,10 @@ export default function PlaceDetail({ onBack, user }) {
                                 <h3 className="text-sm font-bold text-[#f0f0f8] mb-3">เขียนรีวิว</h3>
                                 <div className="flex gap-1 mb-3">
                                     {[1, 2, 3, 4, 5].map((s) => (
-                                        <button key={s} className="w-8 h-8 text-[#2a2a38] hover:text-[#e8ff47] transition-colors">
+                                        <button
+                                            key={s}
+                                            onClick={() => handleRatingClick(s)}
+                                            className={`w-8 h-8 transition-colors ${s <= rating ? "text-[#e8ff47]" : "text-[#2a2a38]"}`}>
                                             <svg viewBox="0 0 20 20" fill="currentColor">
                                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                             </svg>

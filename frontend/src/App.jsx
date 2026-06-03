@@ -16,6 +16,7 @@ function App() {
     return username && token ? { username } : null;
   });
 
+
   // Sync user state if Login page sets localStorage directly
   // (Login.jsx ต้อง dispatch event "auth" หลัง setItem — ดูด้านล่าง)
   useEffect(() => {

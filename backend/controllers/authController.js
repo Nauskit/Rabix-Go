@@ -16,19 +16,20 @@ exports.register = async (req, res) => {
         }
 
         //input normalization
-        email = email.toLowerCase().trim();
+        const normalizationEmail = email.toLowerCase().trim();
+        const normalizationUsername = username.trim();
 
         //check format email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(normalizationEmail)) {
             return res.status(400).json({
                 message: "Invalid email format"
             })
         }
 
         const userExist = await pool.query(
-            'SELECT id FROM users WHERE email = $1', [email]
+            'SELECT id FROM users WHERE email = $1', [normalizationEmail]
         )
         if (userExist.rows.length > 0) {
             return res.status(400).json({
@@ -40,7 +41,7 @@ exports.register = async (req, res) => {
 
         const newUser = await pool.query(
             'INSERT INTO users (username,email,password) VALUES ($1,$2,$3) RETURNING *',
-            [username, email, hashPassword]
+            [normalizationUsername, normalizationEmail, hashPassword]
         )
 
         return res.status(201).json({
@@ -65,10 +66,11 @@ exports.login = async (req, res) => {
                 message: "All fields are required"
             })
         }
+        const normalizationEmail = email.toLowerCase().trim();
 
         const userExist = await pool.query(
             'SELECT * FROM users WHERE email = $1',
-            [email]
+            [normalizationEmail]
         )
 
         if (userExist.rows.length === 0) {

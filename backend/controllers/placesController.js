@@ -2,45 +2,59 @@ const { pool } = require('../config/db')
 
 
 exports.createPlace = async (req, res) => {
-    try {
-        const { name, place_type, description, address, province, district, subdistrict, latitude, longitude } = req.body;
-        const userId = req.user.id;
+    const { name, place_type, description, address, province, district, subdistrict, price_min, price_max, image_url } = req.body;
+    const userId = req.user.id;
 
-
-        if (!name || !place_type || !address || !province || !district || !subdistrict) {
-            return res.status(400).json({
-                message: 'All field are required'
-            })
-        }
-        if (latitude === undefined || latitude === null || longitude === undefined || longitude === null) {
-            return res.status(400).json({
-                message: 'Location are required'
-            })
-        }
-
-        const normalizedName = name.toLowerCase().trim();
-
-        const nameExist = await pool.query(
-            "SELECT name FROM places WHERE name = $1", [normalizedName]
-        )
-        if (nameExist.rows.length > 0) {
-            return res.status(400).json({
-                message: 'name already used'
-            })
-        }
-
-        const newPlace = await pool.query(
-            "INSERT INTO places (name, place_type, description, address, province, district, subdistrict, latitude, longitude, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, $10) RETURNING *",
-            [normalizedName, place_type, description, address, province, district, subdistrict, latitude, longitude, userId]
-        )
-
-        return res.status(201).json({
-            message: 'Restaurant created successfully',
-            restaurant: newPlace.rows[0]
+    if (!name || !place_type || !address || !province || !district || !subdistrict) {
+        return res.status(400).json({
+            message: "All field are required"
         })
+    }
+
+    const normalizedName = name.trim();
+    const normalizedDescription = description?.trim() || null;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const nameExist = await client.query(
+            `SELECT name FROM places WHERE name = $1`, [normalizedName]
+        )
+        if (nameExist.rowCount > 0) {
+            await client.query('ROLLBACK')
+            return res.status(400).json({
+                message: 'Name already used'
+            })
+        }
+
+        const place = await client.query(
+            `INSERT INTO places (name,place_type,description,address,province, district,subdistrict, created_by, price_min, price_max)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, $10) RETURNING *`,
+            [normalizedName, place_type, normalizedDescription, address, province, district, subdistrict, userId, price_min, price_max]
+        )
+
+        const placeId = place.rows[0].id
+
+        if (image_url) {
+            await client.query(
+                `INSERT INTO place_images (place_id, image_url)
+                VALUES ($1,$2)`,
+                [placeId, image_url]
+            );
+        }
+
+        await client.query('COMMIT');
+        return res.status(201).json({
+            data: place.rows[0],
+            message: 'Restaurant created successfully'
+        });
+
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error(err);
         return res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        client.release();
     }
 }
 

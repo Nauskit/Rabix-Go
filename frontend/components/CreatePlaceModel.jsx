@@ -1,20 +1,33 @@
 import { useState, useEffect } from "react";
 import { Input, Btn, ErrorAlert } from "./FormElements.jsx";
+import geography from '../src/data/geography.json'
 
-const CATEGORIES = ["อาหารไทย", "อาหารญี่ปุ่น", "อาหารตะวันตก", "อาหารจีน", "อาหารอิตาลี", "อาหารอินเดีย", "เพื่อสุขภาพ", "อื่น ๆ"];
 
+const CATEGORIES = ["ร้านอาหาร", "ร้านคาเฟ่", "สถานที่ท่องเที่ยว"];
 export default function CreatePlaceModel({ onClose, onCreated }) {
     const [form, setForm] = useState({
         name: "",
         description: "",
-        category: "อาหารไทย",
+        place_type: "ร้านอาหาร",
         address: "",
-        priceRange: "฿฿",
-        imageUrl: "",
+        province: "",
+        district: "",
+        subdistrict: "",
+        priceRange: "100-250฿",
+        image_url: "",
     });
+
+    const PRICE_MAP = {
+        "100-250฿": { price_min: 100, price_max: 250 },
+        "200-500฿": { price_min: 200, price_max: 500 },
+        "400-800฿": { price_min: 400, price_max: 800 },
+        "500-1000+฿": { price_min: 500, price_max: 1000 },
+    }
+
+
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-
+    const [selectedTags, setSelectedTags] = useState([]);
     // Close on Escape
     useEffect(() => {
         const fn = (e) => { if (e.key === "Escape") onClose(); };
@@ -35,24 +48,34 @@ export default function CreatePlaceModel({ onClose, onCreated }) {
         setError("");
         try {
             const token = localStorage.getItem("accessToken");
-            const res = await fetch("http://localhost:3000/restaurants", {
+            const res = await fetch("http://localhost:3000/places/create-place", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify(form),
+                body: JSON.stringify({ ...form, tags: selectedTags, ...PRICE_MAP[form.priceRange] }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "สร้างร้านไม่สำเร็จ");
             onCreated(data);
         } catch (err) {
-            // Fallback: add mock locally so UI still works
-            onCreated({ ...form, id: Date.now(), rating: 0, reviewCount: 0, isOpen: true });
+            setError(err.message || "สร้างร้านไม่สำเร็จ")
         } finally {
             setLoading(false);
         }
     }
+
+
+
+
+
+    const provinces = [...new Set(geography.map(g => g.provinceNameTh))].sort();
+    const districts = [...new Set(geography.filter(g => g.provinceNameTh === form.province).map(g => g.districtNameTh))].sort()
+    const subdistricts = geography
+        .filter(g => g.provinceNameTh === form.province && g.districtNameTh === form.district)
+        .map(g => g.subdistrictNameTh)
+
 
     return (
         <div
@@ -90,21 +113,22 @@ export default function CreatePlaceModel({ onClose, onCreated }) {
                     <Input label="คำอธิบาย" placeholder="เล่าเกี่ยวกับร้านของคุณ..." value={form.description} onChange={set("description")} />
 
                     {/* Category + Price row */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3">
                         <div className="mb-4">
-                            <label className="block text-xs font-medium text-[#6b6b80] mb-1.5">ประเภทอาหาร</label>
+                            <label className="block text-xs font-medium text-[#6b6b80] mb-1.5">ประเภทสถานที่</label>
                             <select
-                                value={form.category}
-                                onChange={set("category")}
+                                value={form.place_type}
+                                onChange={set("place_type")}
                                 className="w-full bg-[#1c1c26] rounded-lg px-3.5 py-2.5 text-sm text-[#f0f0f8] outline-none border border-[#2a2a38] focus:border-[#7c6bff] transition-colors"
                             >
-                                {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
+
                         <div className="mb-4">
                             <label className="block text-xs font-medium text-[#6b6b80] mb-1.5">ช่วงราคา</label>
                             <div className="grid grid-cols-4 gap-1">
-                                {["฿", "฿฿", "฿฿฿", "฿฿฿฿"].map((p) => (
+                                {["100-250฿", "200-500฿", "400-800฿", "500-1000+฿"].map((p) => (
                                     <button
                                         key={p}
                                         type="button"
@@ -121,8 +145,37 @@ export default function CreatePlaceModel({ onClose, onCreated }) {
                         </div>
                     </div>
 
-                    <Input label="ที่อยู่ *" placeholder="เช่น ถ.สุขุมวิท กรุงเทพฯ" value={form.address} onChange={set("address")} />
-                    <Input label="URL รูปภาพ" placeholder="https://..." value={form.imageUrl} onChange={set("imageUrl")} />
+                    <Input label="ที่อยู่ *" placeholder="เช่น 10/100 ตึก อาหาร" value={form.address} onChange={set("address")} />
+
+                    <div className="mb-4">
+                        <label className="block text-xs font-medium text-[#6b6b80] mb-1.5">จังหวัด *</label>
+                        <select value={form.province} onChange={set("province")}
+                            className="w-full bg-[#1c1c26] rounded-lg px-3.5 py-2.5 text-sm text-[#f0f0f8] outline-none border border-[#2a2a38] focus:border-[#7c6bff] transition-colors">
+                            <option value="">เลือกจังหวัด</option>
+                            {provinces.map((p, index) => <option key={`${p}-${index}`}>{p}</option>)}
+                        </select>
+                    </div>
+
+                    {/* อำเภอ */}
+                    <div className="mb-4">
+                        <label className="block text-xs font-medium text-[#6b6b80] mb-1.5">อำเภอ/เขต *</label>
+                        <select value={form.district} onChange={set("district")} disabled={!form.province}
+                            className="w-full bg-[#1c1c26] rounded-lg px-3.5 py-2.5 text-sm text-[#f0f0f8] outline-none border border-[#2a2a38] focus:border-[#7c6bff] transition-colors disabled:opacity-40">
+                            <option value="">เลือกอำเภอ</option>
+                            {districts.map((d, index) => <option key={`${d}-${index}`}>{d}</option>)}
+                        </select>
+                    </div>
+
+                    {/* ตำบล */}
+                    <div className="mb-4">
+                        <label className="block text-xs font-medium text-[#6b6b80] mb-1.5">ตำบล/แขวง *</label>
+                        <select value={form.subdistrict} onChange={set("subdistrict")} disabled={!form.district}
+                            className="w-full bg-[#1c1c26] rounded-lg px-3.5 py-2.5 text-sm text-[#f0f0f8] outline-none border border-[#2a2a38] focus:border-[#7c6bff] transition-colors disabled:opacity-40">
+                            <option value="">เลือกตำบล</option>
+                            {subdistricts.map((s, index) => <option key={`${s}-${index}`}>{s}</option>)}
+                        </select>
+                    </div>
+                    <Input label="URL รูปภาพ" placeholder="https://..." value={form.image_url} onChange={set("image_url")} />
 
                     <ErrorAlert message={error} />
                 </div>

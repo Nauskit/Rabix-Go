@@ -9,6 +9,7 @@ router.post('/:id/images', placesController.addPlaceImage)
 router.get('/', placesController.getPlaces)
 router.get('/filter', placesController.filterRestaurants)
 router.get('/:id', placesController.getPlaceById)
+router.post('/create-place', placesController.createPlace)
 
 
 

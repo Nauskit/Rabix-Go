@@ -1,12 +1,5 @@
 const { pool } = require('../config/db')
 
-exports.createReview = async (req, res) => {
-    const { id } = req.params;
-    const { placeId } = req.params;
-    const comment = await pool.query(
-        `INSERT INTRO review_place ()`
-    )
-}
 
 exports.getTags = async (req, res) => {
     try {
@@ -23,6 +16,7 @@ exports.getTags = async (req, res) => {
 }
 
 exports.sendReview = async (req, res) => {
+
     try {
         const { placeId } = req.params;
         const userId = req.user.id;

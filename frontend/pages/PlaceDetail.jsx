@@ -132,7 +132,7 @@ export default function PlaceDetail({ onBack, user }) {
                                 {place.is_open ? "● เปิดอยู่" : "○ ปิดแล้ว"}
                             </span>
                             <span className={`text-xs font-black px-3 py-1 rounded-full bg-[#0a0a0f]/70 backdrop-blur-sm ${PRICE_COLOR[place.priceRange] ?? "text-[#6b6b80]"}`}>
-                                {place.avg_price}
+                                {place.price_min} - {place.price_max} ฿
                             </span>
                         </div>
 

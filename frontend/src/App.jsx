@@ -17,6 +17,7 @@ function App() {
   });
 
 
+
   // Sync user state if Login page sets localStorage directly
   // (Login.jsx ต้อง dispatch event "auth" หลัง setItem — ดูด้านล่าง)
   useEffect(() => {
@@ -28,6 +29,7 @@ function App() {
     window.addEventListener("auth", onAuth);
     return () => window.removeEventListener("auth", onAuth);
   }, []);
+
   return (
     <div
       className="min-h-screen bg-[#0a0a0f] text-[#f0f0f8]"

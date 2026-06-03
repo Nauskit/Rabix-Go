@@ -59,7 +59,7 @@ export default function PlaceCard({ place, isOwner }) {
                             {place.is_open ? "● เปิดอยู่" : "○ ปิดแล้ว"}
                         </span>
                         <span className={`text-xs font-black px-2 py-0.5 rounded-full bg-[#0a0a0f]/80 backdrop-blur-sm ${PRICE_COLOR[place.priceRange] ?? "text-[#6b6b80]"}`}>
-                            {place.priceRange}
+                            {place.price_min} - {place.price_max} ฿
                         </span>
                     </div>
 
@@ -107,12 +107,12 @@ export default function PlaceCard({ place, isOwner }) {
                     </p>
 
 
-                    <div className="flex items-center gap-1.5 text-[11px] text-[#3a3a48]">
+                    <div className="flex items-center gap-1.5 text-[11px] text-[#484853]">
                         <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span className="truncate">{place.address}</span>
+                        <span className="truncate">{[place.address, place.province, place.district, place.subdistrict].filter(Boolean).join(" ")}</span>
                     </div>
                 </div>
             </div>

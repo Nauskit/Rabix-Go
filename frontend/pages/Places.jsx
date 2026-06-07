@@ -25,7 +25,7 @@ function Skeleton() {
 }
 
 // ── Main ───────────────────────────────────────────────────────────────
-export default function Places({ user }) {
+export default function Places({ user, routes, setRoutes, onAddToPlaylist }) {
     const [places, setPlaces] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -33,6 +33,7 @@ export default function Places({ user }) {
     const [activeTab, setActiveTab] = useState("ทั้งหมด");
     const [showModal, setShowModal] = useState(false);
     const [showRoutePanel, setShowRoutePanel] = useState(false);
+    const [newRouteName, setNewRouteName] = useState("");
 
     // Fetch restaurants
     useEffect(() => {
@@ -69,6 +70,30 @@ export default function Places({ user }) {
 
     const openCount = filtered.filter((r) => r.is_open).length;
 
+    const createRoute = async () => {
+        if (!newRouteName.trim()) return;
+        const token = localStorage.getItem('accessToken');
+        const res = await fetch('http://localhost:3000/routes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ name: newRouteName.trim() })
+        });
+        const data = await res.json();
+        setRoutes(prev => [{ ...data.data, place_count: 0 }, ...prev]);
+        setNewRouteName("");
+    };
+
+    const deleteRoute = async (routeId) => {
+        const token = localStorage.getItem('accessToken');
+        await fetch(`http://localhost:3000/routes/${routeId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+        })
+        setRoutes(prev => prev.filter(r => r.id !== routeId))
+    }
 
     return (
         <div className="min-h-screen pt-[60px]">
@@ -183,16 +208,54 @@ export default function Places({ user }) {
             {showRoutePanel && (
                 <div className="border-t border-[#2a2a38] bg-[#0d0d14]">
                     <div className="max-w-5xl mx-auto px-4 py-4">
-                        <p className="text-xs font-bold text-[#f0f0f8] mb-3">Routes ของฉัน</p>
-                        <p className="text-xs text-[#6b6b80] text-center py-4">
-                            ยังไม่มี route — สร้างอันแรกได้เลย
+                        <p className="text-xs font-bold text-[#f0f0f8] mb-3">
+                            Route ของฉัน
                         </p>
-                        <div className="flex gap-2 pt-2">
+
+                        {/* แสดง routes จริง */}
+                        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-3">
+                            {routes?.length === 0 ? (
+                                <p className="text-xs text-[#6b6b80] py-2">
+                                    ยังไม่มี Route — สร้างอันแรกได้เลย
+                                </p>
+                            ) : (
+                                routes?.map(pl => (
+                                    <div key={pl.id}
+                                        className="flex items-center gap-2 bg-[#1c1c26] border border-[#2a2a38] rounded-xl px-3 py-2 shrink-0"
+                                    >
+                                        <span>🔖</span>
+                                        <div>
+                                            <p className="text-xs font-bold text-[#f0f0f8] whitespace-nowrap">{pl.name}</p>
+                                            <p className="text-[10px] text-[#6b6b80]">{pl.place_count ?? 0} สถานที่</p>
+                                        </div>
+
+                                        {/* delete button */}
+                                        <button
+                                            onClick={() => deleteRoute(pl.id)}
+                                            className="text-[#6b6b80] hover:text-[#ff4d6d] transition-colors ml-1"
+                                        >
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Create input */}
+                        <div className="flex gap-2">
                             <input
-                                placeholder="ชื่อ route ใหม่..."
+                                value={newRouteName}
+                                onChange={e => setNewRouteName(e.target.value)}
+                                onKeyDown={e => e.key === "Enter" && createRoute()}
+                                placeholder="ชื่อ Route ใหม่..."
                                 className="flex-1 bg-[#0a0a0f] border border-[#2a2a38] focus:border-[#7c6bff] rounded-xl px-3 py-2 text-xs text-[#f0f0f8] placeholder:text-[#3a3a48] outline-none transition-colors"
                             />
-                            <button className="px-4 py-2 rounded-xl bg-[#7c6bff] text-white text-xs font-bold">
+                            <button
+                                onClick={createRoute}
+                                className="px-4 py-2 rounded-xl bg-[#7c6bff] text-white text-xs font-bold hover:opacity-90"
+                            >
                                 สร้าง
                             </button>
                         </div>
@@ -253,7 +316,9 @@ export default function Places({ user }) {
                             >
                                 <PlaceCard
                                     place={r}
-                                    isOwner={user?.username === r.ownerId || user?.username === r.owner}
+                                    isOwner={user?.username === r.owner}
+                                    playlists={routes}
+                                    onAddToPlaylist={onAddToPlaylist}
                                 />
                             </div>
                         ))}

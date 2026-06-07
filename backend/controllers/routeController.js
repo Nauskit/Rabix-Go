@@ -94,7 +94,7 @@ exports.removeRoute = async (req, res) => {
     try {
         const { routeId } = req.params;
         await pool.query(
-            `DELETE FROM route_places WHERE route_id = $1`,
+            `DELETE FROM routes WHERE id = $1`,
             [routeId]
         )
 

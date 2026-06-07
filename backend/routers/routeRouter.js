@@ -8,5 +8,6 @@ router.post('/', verifyToken, routeController.createRoute);
 router.get('/showRoute', verifyToken, routeController.getUserRoute);
 router.post('/:routeId/places', verifyToken, routeController.addPlcaeToRoute);
 router.delete('/:routeId/places/:placeId', verifyToken, routeController.removePlaceFromRoute);
+router.delete('/:routeId', verifyToken, routeController.removeRoute)
 
 module.exports = router;

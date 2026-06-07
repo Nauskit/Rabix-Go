@@ -15,9 +15,38 @@ function App() {
     const token = localStorage.getItem("accessToken");
     return username && token ? { username } : null;
   });
+  const [routes, setRoutes] = useState([]);
 
 
 
+  //route patch
+  useEffect(() => {
+    if (!user) return;
+    const token = localStorage.getItem('accessToken');
+    fetch('http://localhost:3000/routes/showRoute', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(d => setRoutes(d.data ?? []));
+  }, [user]);
+
+
+  const handleAddToRoute = async (place, routeId) => {
+    const token = localStorage.getItem('accessToken');
+    await fetch(`http://localhost:3000/routes/${routeId}/places`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ placeId: place.id })
+    });
+    setRoutes(prev => prev.map(r =>
+      r.id === routeId
+        ? { ...r, place_count: (r.place_count ?? 0) + 1 }
+        : r
+    ));
+  };
   // Sync user state if Login page sets localStorage directly
   // (Login.jsx ต้อง dispatch event "auth" หลัง setItem — ดูด้านล่าง)
   useEffect(() => {
@@ -40,8 +69,18 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login onLogin={setUser} />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/places" element={<Places user={user} />} />
-        <Route path="/places/:id" element={<PlaceDetail user={user} />} />
+        <Route path="/places" element={
+          <Places
+            user={user}
+            routes={routes}
+            setRoutes={setRoutes}
+            onAddToPlaylist={handleAddToRoute}
+          />} />
+        <Route path="/places/:id" element={<PlaceDetail
+          user={user}
+          routes={routes}
+          onAddToPlaylist={handleAddToRoute}
+        />} />
       </Routes>
     </div>
   );

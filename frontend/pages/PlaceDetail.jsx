@@ -42,7 +42,7 @@ function RatingBar({ label, pct }) {
 }
 
 // ── Main ───────────────────────────────────────────────────────────────
-export default function PlaceDetail({ onBack, user }) {
+export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
     const [place, setPlace] = useState(null);
     const [tags, setTags] = useState([]);
     const [selectTags, setSelectTag] = useState([])
@@ -51,6 +51,7 @@ export default function PlaceDetail({ onBack, user }) {
     const [tab, setTab] = useState("info"); // info | reviews
     const [saved, setSaved] = useState(false);
     const [addedToRoute, setAddedToRoute] = useState(false);
+    const [showRouteSelect, setShowRouteSelect] = useState(false);
     const [rating, setRating] = useState(null);
     const { id } = useParams();
 
@@ -97,6 +98,9 @@ export default function PlaceDetail({ onBack, user }) {
     if (!place || !tags) return null;
 
     const PRICE_COLOR = { "฿": "text-[#e8ff47]", "฿฿": "text-[#e8ff47]/80", "฿฿฿": "text-[#7c6bff]", "฿฿฿฿": "text-[#ff4d6d]" };
+
+
+
 
     return (
         <div className="min-h-screen pt-[60px] bg-[#0a0a0f]">
@@ -185,12 +189,50 @@ export default function PlaceDetail({ onBack, user }) {
                     </div>
 
                     {/* Add to Route CTA */}
-                    <button
-                        onClick={() => setAddedToRoute(!addedToRoute)}
-                        className={`shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${addedToRoute ? "bg-[#e8ff47]/20 border border-[#e8ff47]/40 text-[#e8ff47]" : "bg-[#e8ff47] text-[#0a0a0f] hover:opacity-90"}`}
-                    >
-                        {addedToRoute ? "✓ เพิ่มใน Route แล้ว" : "＋ เพิ่มใน Route"}
-                    </button>
+                    <div className="relative shrink-0">
+                        <button
+                            onClick={() => setShowRouteSelect(prev => !prev)}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#e8ff47] text-[#0a0a0f] hover:opacity-90 transition-all"
+                        >
+                            🔖 เพิ่มใน Route
+                        </button>
+
+                        {showRouteSelect && (
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-[#13131a] border border-[#2a2a38] rounded-xl shadow-xl z-50 overflow-hidden">
+                                <div className="px-4 py-2.5 border-b border-[#2a2a38]">
+                                    <p className="text-[11px] font-bold text-[#6b6b80] uppercase tracking-widest">
+                                        เลือก Route
+                                    </p>
+                                </div>
+
+                                {routes?.length === 0 ? (
+                                    <p className="text-xs text-[#6b6b80] text-center py-4 px-3">
+                                        ยังไม่มี Route — ไปสร้างที่หน้าร้านก่อน
+                                    </p>
+                                ) : (
+                                    routes?.map(route => (
+                                        <button
+                                            key={route.id}
+                                            onClick={async () => {
+                                                await onAddToPlaylist(place, route.id);
+                                                setShowRouteSelect(false);
+                                                setAddedToRoute(true);
+                                            }}
+                                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#1c1c26] transition-colors text-left"
+                                        >
+                                            <div>
+                                                <p className="text-sm font-bold text-[#f0f0f8]">{route.name}</p>
+                                                <p className="text-[10px] text-[#6b6b80]">
+                                                    {route.place_count ?? 0} สถานที่
+                                                </p>
+                                            </div>
+                                            <span className="text-[#7c6bff] text-lg font-black">+</span>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mt-4">

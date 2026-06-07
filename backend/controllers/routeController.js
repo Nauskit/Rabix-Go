@@ -27,7 +27,7 @@ exports.addPlcaeToRoute = async (req, res) => {
         const { placeId } = req.body
 
         const lastIndex = await pool.query(
-            `SELECT COALESCE (MAX(order_idex), 0) AS max_index
+            `SELECT COALESCE(MAX(order_index), 0) AS max_index
             FROM route_places WHERE route_id = $1`, [routeId]
         )
         const orderIndex = lastIndex.rows[0].max_index + 1;

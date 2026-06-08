@@ -46,7 +46,6 @@ export default function Places({ user, routes, setRoutes, onAddToPlaylist }) {
                 });
                 const d = await res.json();
                 setPlaces(Array.isArray(d.data) ? d.data : []);
-
             } catch (error) {
                 setPlaces([]);
             } finally {
@@ -309,6 +308,7 @@ export default function Places({ user, routes, setRoutes, onAddToPlaylist }) {
                 {!loading && filtered.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filtered.map((r, i) => (
+
                             <div
                                 key={r.id}
                                 className="opacity-0 animate-[fadeUp_0.4s_ease_forwards]"
@@ -316,12 +316,13 @@ export default function Places({ user, routes, setRoutes, onAddToPlaylist }) {
                             >
                                 <PlaceCard
                                     place={r}
-                                    isOwner={user?.username === r.owner}
+                                    isOwner={user?.id === r.created_by}
                                     playlists={routes}
                                     onAddToPlaylist={onAddToPlaylist}
                                 />
                             </div>
-                        ))}
+                        )
+                        )}
                     </div>
                 )}
 

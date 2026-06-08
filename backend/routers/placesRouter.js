@@ -9,7 +9,8 @@ router.post('/:id/images', placesController.addPlaceImage)
 router.get('/', placesController.getPlaces)
 router.get('/filter', placesController.filterRestaurants)
 router.get('/:id', placesController.getPlaceById)
-router.post('/create-place', placesController.createPlace)
+router.post('/create-place', verifyToken, placesController.createPlace)
+router.delete('/delete-place/:id', verifyToken, placesController.deletePlace)
 
 
 

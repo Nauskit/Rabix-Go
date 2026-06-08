@@ -29,10 +29,14 @@ export default function Login({ onLogin }) {
             // Store tokens + username
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("refreshToken", data.refreshToken);
+            localStorage.setItem("userId", data.userId);
             localStorage.setItem("username", data.username ?? form.email.split("@")[0]);
 
             // Notify App.jsx via prop and custom event
-            onLogin?.({ username: data.username ?? form.email.split("@")[0] });
+            onLogin?.({
+                username: data.username ?? form.email.split("@")[0],
+                id: data.userId
+            });
             window.dispatchEvent(new Event("auth"));
 
 

@@ -222,8 +222,6 @@ exports.addPlaceImage = async (req, res) => {
         const { image_url } = req.body;
 
 
-        console.log('id:', id);
-        console.log('url:', image_url);
 
 
         const addImage = await pool.query(
@@ -238,5 +236,32 @@ exports.addPlaceImage = async (req, res) => {
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+
+exports.deletePlace = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const deletePlace = await pool.query(
+            `DELETE FROM places WHERE id = $1 AND created_by = $2 RETURNING *`,
+            [id, userId]
+        )
+        if (deletePlace.rows.length === 0) {
+            return res.status(404).json({
+                message: 'Place not found or permission denied'
+            })
+        }
+
+        return res.status(200).json({
+            message: 'Place has deleted'
+        })
+
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: err.message });
     }
 }

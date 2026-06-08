@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useNavigate } from "react-router-dom";
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -52,8 +53,12 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
     const [saved, setSaved] = useState(false);
     const [addedToRoute, setAddedToRoute] = useState(false);
     const [showRouteSelect, setShowRouteSelect] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleteing] = useState(false);
     const [rating, setRating] = useState(null);
+    const navigate = useNavigate();
     const { id } = useParams();
+
 
     useEffect(() => {
         const fetchPlaceDetail = async () => {
@@ -98,6 +103,30 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
     if (!place || !tags) return null;
 
     const PRICE_COLOR = { "฿": "text-[#e8ff47]", "฿฿": "text-[#e8ff47]/80", "฿฿฿": "text-[#7c6bff]", "฿฿฿฿": "text-[#ff4d6d]" };
+
+
+    const isOwner = user?.username && place?.created_by === user?.id;
+
+    const handleDeletePlace = async () => {
+        setDeleteing(true);
+        const token = localStorage.getItem('accessToken');
+        try {
+            const res = await fetch(`http://localhost:3000/places/delete-place/${id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            if (res.ok) {
+                navigate('/places')
+            }
+
+
+        } catch (err) {
+            console.log(err);
+        } finally {
+            setDeleteing(false);
+        }
+    }
+
 
 
 
@@ -177,6 +206,13 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
                 {/* ── Header Info ──────────────────────────────────────────── */}
                 <div className="mt-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div className="flex-1">
+                        {isOwner && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full
+                   bg-[#7c6bff]/20 border border-[#7c6bff]/30
+                   text-[#7c6bff] text-xs font-bold mt-2">
+                                👑 ร้านของฉัน
+                            </span>
+                        )}
                         <span className="text-[11px] font-bold text-[#7c6bff] uppercase tracking-widest">{place.category}</span>
                         <h1 className="font-black text-3xl text-[#f0f0f8] mt-1 leading-tight" style={{ fontFamily: "Syne, sans-serif" }}>
                             {place.name}
@@ -191,10 +227,13 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
                     {/* Add to Route CTA */}
                     <div className="relative shrink-0">
                         <button
-                            onClick={() => setShowRouteSelect(prev => !prev)}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#e8ff47] text-[#0a0a0f] hover:opacity-90 transition-all"
+                            onClick={() => !addedToRoute && setShowRouteSelect(prev => !prev)}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${addedToRoute
+                                    ? "bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80] cursor-default"
+                                    : "bg-[#e8ff47] text-[#0a0a0f] hover:opacity-90"
+                                }`}
                         >
-                            🔖 เพิ่มใน Route
+                            {addedToRoute ? "✓ ถูกเพิ่มลง Route แล้ว" : "🔖 เพิ่มใน Route"}
                         </button>
 
                         {showRouteSelect && (
@@ -234,6 +273,52 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
                         )}
                     </div>
                 </div>
+                {isOwner && (
+                    <div className="mt-4 flex gap-2">
+                        <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#ff4d6d]/40 text-[#ff4d6d] text-sm font-bold hover:bg-[#ff4d6d]/10 transition-all"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            ลบร้านนี้
+                        </button>
+                    </div>
+                )}
+
+                {/* Delete confirm modal */}
+                {showDeleteConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                        <div className="bg-[#13131a] border border-[#2a2a38] rounded-2xl p-6 w-full max-w-sm mx-4">
+                            <h3 className="font-black text-lg text-[#f0f0f8] mb-2">ยืนยันการลบ</h3>
+                            <p className="text-sm text-[#6b6b80] mb-6">
+                                คุณแน่ใจหรือไม่ว่าต้องการลบ
+                                <span className="text-[#f0f0f8] font-bold"> "{place.name}" </span>
+                                การกระทำนี้ไม่สามารถย้อนกลับได้
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 py-2.5 rounded-xl border border-[#2a2a38] text-[#6b6b80] text-sm font-bold hover:text-white transition-colors"
+                                >
+                                    ยกเลิก
+                                </button>
+                                <button
+                                    onClick={handleDeletePlace}
+                                    disabled={deleting}
+                                    className="flex-1 py-2.5 rounded-xl bg-[#ff4d6d] text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                                >
+                                    {deleting ? "กำลังลบ..." : "ลบเลย"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
+
+
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mt-4">
                     {place.top_tags?.length > 0 && (

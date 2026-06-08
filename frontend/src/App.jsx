@@ -13,7 +13,8 @@ function App() {
   const [user, setUser] = useState(() => {
     const username = localStorage.getItem("username");
     const token = localStorage.getItem("accessToken");
-    return username && token ? { username } : null;
+    const userId = localStorage.getItem("userId")
+    return username && token ? { username, id: userId } : null;
   });
   const [routes, setRoutes] = useState([]);
 
@@ -53,7 +54,8 @@ function App() {
     function onAuth() {
       const username = localStorage.getItem("username");
       const token = localStorage.getItem("accessToken");
-      setUser(username && token ? { username } : null);
+      const userId = localStorage.getItem("userId");
+      setUser(username && token ? { username, id: userId } : null);
     }
     window.addEventListener("auth", onAuth);
     return () => window.removeEventListener("auth", onAuth);

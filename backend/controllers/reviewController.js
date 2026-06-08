@@ -36,7 +36,7 @@ exports.sendReview = async (req, res) => {
             `SELECT id FROM reviews WHERE user_id = $1 AND place_id =$2`,
             [userId, placeId]
         )
-        if (existUserReview.rowsCount > 0) {
+        if (existUserReview.rowCount > 0) {
             return res.status(409).json({
                 message: "You have already reviewed this place"
             })
@@ -87,7 +87,7 @@ exports.updateReview = async (req, res) => {
 
         const result = await pool.query(
             `UPDATE reviews SET comment = $1, rating = $2, updated_at = NOW() WHERE user_id = $3 AND place_id = $4 RETURNING *`,
-            [userId, placeId, checkComment, rating]
+            [checkComment, rating, userId, placeId]
         )
         return res.status(200).json({
             data: result.rows[0]

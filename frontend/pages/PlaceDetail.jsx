@@ -56,6 +56,9 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleting, setDeleteing] = useState(false);
     const [rating, setRating] = useState(null);
+    const [comment, setComment] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [reviewError, setReviewError] = useState("");
     const navigate = useNavigate();
     const { id } = useParams();
 
@@ -127,6 +130,48 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
         }
     }
 
+    const handleSubmitReview = async () => {
+        if (!rating) {
+            setReviewError("กรุณาเลือกคะแนน");
+            return;
+        }
+        setSubmitting(true);
+        setReviewError("");
+        const token = localStorage.getItem('accessToken');
+        try {
+            const res = await fetch(`http://localhost:3000/tags/send-review/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ comment, rating, tags: selectTags })
+            })
+            const data = await res.json();
+            if (res.status === 409) {
+                setReviewError("คุณรีวิวไปแล้ว");
+                return;
+            }
+            if (!res.ok) {
+                setReviewError(data.message ?? "เกิดข้อผิดพลาด");
+                return
+            }
+
+            setComment("");
+            setRating(null);
+            setSelectTag([]);
+
+            const placeRes = await fetch(`http://localhost:3000/places/${id}`);
+            const placeData = await placeRes.json();
+            setPlace(placeData.data);
+
+        } catch (err) {
+            console.log(err);
+            setReviewError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+        } finally {
+            setSubmitting(false);
+        }
+    }
 
 
 
@@ -229,8 +274,8 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
                         <button
                             onClick={() => !addedToRoute && setShowRouteSelect(prev => !prev)}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${addedToRoute
-                                    ? "bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80] cursor-default"
-                                    : "bg-[#e8ff47] text-[#0a0a0f] hover:opacity-90"
+                                ? "bg-[#1c1c26] border border-[#2a2a38] text-[#6b6b80] cursor-default"
+                                : "bg-[#e8ff47] text-[#0a0a0f] hover:opacity-90"
                                 }`}
                         >
                             {addedToRoute ? "✓ ถูกเพิ่มลง Route แล้ว" : "🔖 เพิ่มใน Route"}
@@ -462,10 +507,14 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
                                     ))}
                                 </div>
                                 <textarea
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
                                     placeholder="แชร์ประสบการณ์ของคุณ..."
                                     rows={3}
                                     className="w-full bg-[#0a0a0f] border border-[#2a2a38] focus:border-[#7c6bff] rounded-xl p-3 text-sm text-[#f0f0f8] placeholder:text-[#3a3a48] outline-none resize-none transition-colors"
                                 />
+
+
                                 <div className="flex flex-wrap gap-2 mt-3">
                                     {tags.map(tag => (
                                         <button
@@ -479,10 +528,18 @@ export default function PlaceDetail({ onBack, user, routes, onAddToPlaylist }) {
                                         </button>
                                     ))}
                                 </div>
+                                {reviewError && (
+                                    <p className="text-xs text-[#ff4d6d] mt-2">{reviewError}</p>
+                                )}
                                 <div className="flex justify-end mt-2">
-                                    <button className="px-4 py-2 rounded-lg bg-[#7c6bff] text-white text-sm font-bold hover:opacity-90 transition-opacity">
-                                        ส่งรีวิว
+                                    <button
+                                        onClick={handleSubmitReview}
+                                        disabled={submitting || !rating}
+                                        className="px-4 py-2 rounded-lg bg-[#7c6bff] text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-40"
+                                    >
+                                        {submitting ? "กำลังส่ง..." : "ส่งรีวิว"}
                                     </button>
+
                                 </div>
                             </div>
                         )}

@@ -14,7 +14,24 @@ function App() {
     const username = localStorage.getItem("username");
     const token = localStorage.getItem("accessToken");
     const userId = localStorage.getItem("userId")
-    return username && token ? { username, id: userId } : null;
+
+    //check accessToken
+    if (!username || !token) return null;
+
+    try {
+      const { exp } = JSON.parse(atob(token.split(".")[1]));
+      if (exp < Math.floor(Date.now() / 1000)) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("username");
+        localStorage.removeItem("userId");
+        return null;
+      }
+    } catch {
+      return null;
+    }
+
+    return { username, id: userId };
   });
   const [routes, setRoutes] = useState([]);
 

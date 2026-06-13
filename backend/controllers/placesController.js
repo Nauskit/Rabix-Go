@@ -1,5 +1,5 @@
 const { pool } = require('../config/db')
-
+const { invalidateCache } = require('../middleware/cache')
 
 exports.createPlace = async (req, res) => {
     const { name, place_type, description, address, province, district, subdistrict, price_min, price_max, image_url } = req.body;
@@ -44,6 +44,7 @@ exports.createPlace = async (req, res) => {
         }
 
         await client.query('COMMIT');
+        await invalidateCache('/places');
         return res.status(201).json({
             data: place.rows[0],
             message: 'Restaurant created successfully'

@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt')
 const { pool } = require("../config/db")
 const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
 const hashToken = require('../utils/hashToken');
+const jwt = require('jsonwebtoken')
 require('dotenv').config();
 
 
@@ -59,6 +60,7 @@ exports.register = async (req, res) => {
 }
 
 exports.login = async (req, res) => {
+    const client = await pool.connect()
     try {
         const { email, password } = req.body
         if (!email || !password) {
@@ -93,10 +95,19 @@ exports.login = async (req, res) => {
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
         const tokenHash = hashToken(refreshToken);
-        await pool.query(
+
+        await client.query('BEGIN')
+
+        await client.query(
+            `DELETE FROM refresh_tokens WHERE user_id = $1`, [user.id]
+        )
+
+        await client.query(
             `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) 
             VALUES ($1,$2, NOW() + INTERVAL '7 days')`, [user.id, tokenHash]
         )
+
+        await client.query('COMMIT')
 
         return res.status(200).json({
             message: "Login successfully",
@@ -107,8 +118,11 @@ exports.login = async (req, res) => {
             username: user.username
         })
     } catch (err) {
+        await client.query('ROLLBACK')
         console.error(err);
         return res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        client.release();
     }
 }
 
@@ -207,5 +221,50 @@ exports.getUser = async (req, res) => {
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+exports.getRefreshToken = async (req, res) => {
+    const client = await pool.connect()
+    try {
+        const { refreshToken } = req.body
+        if (!refreshToken) return res.status(401).json({ message: 'No token' });
+
+        const payload = jwt.verify(refreshToken, process.env.REFRESH_JWT_SECRET)
+
+        const tokenHash = hashToken(refreshToken);
+        const { rows } = await pool.query(
+            `SELECT id FROM refresh_tokens WHERE token_hash = $1 AND expires_at > NOW()`, [tokenHash]
+        )
+
+        if (!rows.length) return res.status(401).json({ message: 'Token revoked' })
+
+        const userPayload = { id: payload.id, username: payload.username, role: payload.role }
+        const accessToken = generateAccessToken(userPayload)
+        const newRefreshToken = generateRefreshToken(userPayload)
+        const newTokenHsah = hashToken(newRefreshToken);
+
+        await client.query('BEGIN');
+
+        await client.query(
+            `DELETE FROM refresh_tokens WHERE token_hash = $1`, [tokenHash]
+        )
+        await client.query(
+            `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,NOW() + INTERVAL '7 days')`,
+            [payload.id, newTokenHsah]
+        )
+
+        await client.query('COMMIT')
+
+        return res.status(200).json({
+            accessToken, refreshToken: newRefreshToken
+        })
+
+    } catch (err) {
+        await client.query('ROLLBACK')
+        console.error(err);
+        return res.status(500).json({ message: 'Internal server error' });
+    } finally {
+        client.release();
     }
 }
